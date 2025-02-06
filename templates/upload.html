@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Ladda upp CSV</title>
+</head>
+<body>
+    <h1>Ladda upp CSV-fil</h1>
+    <form method="POST" action="/upload" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".csv" required>
+        <input type="submit" value="Ladda upp">
+    </form>
+    <p><a href="/dashboard">Tillbaka till dashboard</a></p>
+</body>
+</html>

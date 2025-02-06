@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+</head>
+<body>
+    <h1>Välkommen, {{ user['email'] if user else 'Gäst' }}</h1>
+    <p><a href="/upload">Ladda upp CSV-fil</a></p>
+    <p><a href="/logout">Logga ut</a></p>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Logga in med Google</title>
+  <!-- Ladda in Firebase JS SDK (version 8) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script>
+    // Använd Firebase-konfigurationen som skickats från Flask via Jinja2
+    var firebaseConfig = {{ firebase_config | tojson }};
+    firebase.initializeApp(firebaseConfig);
+  </script>
+</head>
+<body>
+  <h1>Logga in med Google</h1>
+  <button id="google-signin">Sign in with Google</button>
+  <script>
+    document.getElementById('google-signin').addEventListener('click', function() {
+      console.log("Google-signin-knappen klickades, startar inloggning...");
+      var provider = new firebase.auth.GoogleAuthProvider();
+      firebase.auth().signInWithPopup(provider)
+        .then(function(result) {
+          console.log("Inloggningen lyckades, resultat:", result);
+          return result.user.getIdToken();
+        })
+        .then(function(idToken) {
+          console.log("Hämtat ID-token:", idToken);
+          // Skapa ett formulär för att skicka token till backend
+          var form = document.createElement('form');
+          form.method = 'POST';
+          form.action = '/login';
+          var input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'idToken';
+          input.value = idToken;
+          form.appendChild(input);
+          document.body.appendChild(form);
+          form.submit();
+        })
+        .catch(function(error) {
+          console.error("Fel vid inloggning:", error);
+          alert("Inloggningen misslyckades: " + error.message);
+        });
+    });
+  </script>
+</body>
+</html>
