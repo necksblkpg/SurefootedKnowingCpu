@@ -1,12 +1,205 @@
 <!DOCTYPE html>
-<html>
+<html lang="sv">
 <head>
-    <meta charset="UTF-8">
-    <title>Dashboard</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: #f8f9fa;
+    }
+    .navbar {
+      margin-bottom: 30px;
+    }
+    .file-actions button,
+    .file-actions form {
+      display: inline-block;
+      margin-right: 5px;
+    }
+  </style>
 </head>
 <body>
-    <h1>Välkommen, {{ user['email'] if user else 'Gäst' }}</h1>
-    <p><a href="/upload">Ladda upp CSV-fil</a></p>
-    <p><a href="/logout">Logga ut</a></p>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+      <a class="navbar-brand" href="#">Min App</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/upload">Ladda upp CSV</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/todos">Mina Uppgifter</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/dashboard">Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/logout">Logga ut</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1 class="mb-4 text-center">Välkommen, {{ user['email'] if user else 'Gäst' }}</h1>
+    <p class="text-center">Här kan du hantera dina filer och kontoinställningar.</p>
+
+    <h2 class="mt-5">Dina uppladdade filer</h2>
+    {% if files %}
+      <ul class="list-group mt-3">
+        {% for file in files %}
+          <li class="list-group-item">
+            <div class="d-flex flex-column">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>
+                    {% if file.name.lower().endswith('.pdf') %}
+                      📄
+                    {% else %}
+                      📊
+                    {% endif %}
+                    {{ file.name }}
+                  </strong>
+                  <small class="text-muted">({{ file.file_type }})</small>
+                  {% if file.description %}
+                    <p class="mb-0"><em>{{ file.description }}</em></p>
+                  {% endif %}
+                  {% if file.tags %}
+                    <p class="mb-0">Taggar: {{ file.tags }}</p>
+                  {% endif %}
+                  {% if file.upload_time %}
+                    <p class="mb-0">Uppladdad: {{ file.upload_time }}</p>
+                  {% endif %}
+                  {% if file.last_edited %}
+                    <p class="mb-0">Senast redigerad: {{ file.last_edited }}</p>
+                  {% endif %}
+                </div>
+                <div class="file-actions">
+                  <a href="{{ file.url }}" target="_blank" class="btn btn-sm btn-primary">Ladda ner</a>
+                  <!-- Delete form -->
+                  <form action="/delete_file" method="POST" class="d-inline">
+                    <input type="hidden" name="filename" value="{{ file.name }}">
+                    <button type="submit" class="btn btn-sm btn-danger">Ta bort</button>
+                  </form>
+                  <!-- Rename button (behåll om du vill ha rename via modal) -->
+                  <button type="button" class="btn btn-sm btn-warning rename-btn" data-old-filename="{{ file.name }}">
+                    Byt namn
+                  </button>
+                  <!-- Edit metadata button -->
+                  <button type="button" class="btn btn-sm btn-info edit-meta-btn" 
+                          data-filename="{{ file.name }}" 
+                          data-description="{{ file.description }}" 
+                          data-tags="{{ file.tags }}">
+                    Redigera metadata
+                  </button>
+                </div>
+              </div>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="mt-3">Inga filer uppladdade ännu.</p>
+    {% endif %}
+
+    <h2 class="mt-5">Dina uppgifter</h2>
+    {% for todo in todos %}
+      <div class="todo-item">
+        <h5>{{ todo.title }}</h5>
+        <p>{{ todo.description }}</p>
+        <span>Prioritet: {{ todo.priority }}</span>
+        <span>Projekt: {{ todo.project_id }}</span>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Rename Modal (behåll om du vill ha rename via modal) -->
+  <div class="modal fade" id="renameModal" tabindex="-1" aria-labelledby="renameModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form action="/rename_file" method="POST" id="renameForm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="renameModalLabel">Byt namn på fil</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Stäng"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" name="old_filename" id="oldFilename">
+            <div class="mb-3">
+              <label for="newFilename" class="form-label">Nytt filnamn (måste sluta med .csv)</label>
+              <input type="text" class="form-control" name="new_filename" id="newFilename" placeholder="exempel.csv" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+            <button type="submit" class="btn btn-warning">Spara</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Metadata Modal -->
+  <div class="modal fade" id="metadataModal" tabindex="-1" aria-labelledby="metadataModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form action="/update_metadata" method="POST" id="metadataForm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="metadataModalLabel">Redigera metadata</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Stäng"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" name="filename" id="metaFilename">
+            <div class="mb-3">
+              <label for="metaDescription" class="form-label">Beskrivning</label>
+              <textarea class="form-control" name="description" id="metaDescription" placeholder="Lägg till en beskrivning"></textarea>
+            </div>
+            <div class="mb-3">
+              <label for="metaTags" class="form-label">Taggar</label>
+              <input type="text" class="form-control" name="tags" id="metaTags" placeholder="Separera taggar med kommatecken">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+            <button type="submit" class="btn btn-primary">Spara metadata</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 Bundle (med Popper) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Hantera rename-knappar (behåll om du vill ha rename via modal)
+    document.querySelectorAll('.rename-btn').forEach(function(button) {
+      button.addEventListener('click', function() {
+        var oldFilename = this.getAttribute('data-old-filename');
+        document.getElementById('oldFilename').value = oldFilename;
+        var renameModal = new bootstrap.Modal(document.getElementById('renameModal'));
+        renameModal.show();
+      });
+    });
+
+    // Hantera "Redigera metadata"-knappar
+    document.querySelectorAll('.edit-meta-btn').forEach(function(button) {
+      button.addEventListener('click', function() {
+        var filename = this.getAttribute('data-filename');
+        var description = this.getAttribute('data-description') || "";
+        var tags = this.getAttribute('data-tags') || "";
+        document.getElementById('metaFilename').value = filename;
+        document.getElementById('metaDescription').value = description;
+        document.getElementById('metaTags').value = tags;
+        var metadataModal = new bootstrap.Modal(document.getElementById('metadataModal'));
+        metadataModal.show();
+      });
+    });
+  </script>
 </body>
 </html>

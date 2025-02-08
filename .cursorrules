@@ -1,0 +1,74 @@
+# TODO APP MED FILHANTERING - PROJEKTPLAN
+
+[X] Initial planering
+[X] Datamodell för todos
+[X] Uppdatera databas-struktur
+[X] Implementera grundläggande CRUD-operationer för todos
+[X] Implementera filuppladdning för todos
+[X] Fixa bug med filuppladdning
+    [X] Kontrollera filhantering i upload_todo_file
+    [X] Lägg till stöd för att ladda ner filer
+    [X] Visa filstorlek och typ
+[ ] Implementera projekt/kategorier
+[ ] Implementera subtasks
+[ ] Testa och felsöka
+[ ] Deployment på Replit
+
+## DATAMODELL
+Todo-item ska innehålla:
+- id (auto-genererat)
+- titel
+- beskrivning
+- status (ej påbörjad/pågående/klar)
+- deadline (datum)
+- skapad datum
+- senast ändrad datum
+- tillhörande filer (optional)
+- projekt_id (koppling till projekt)
+- parent_todo_id (för subtasks, optional)
+- subtasks (array med todo-ids)
+- användar-id (koppling till användare)
+
+## DATABAS-STRUKTUR (Firestore)
+users/
+  {user_id}/
+    projects/
+      {project_id}/
+        - name
+        - color
+        - created_at
+    todos/
+      {todo_id}/
+        - title
+        - description
+        - status
+        - deadline
+        - created_at
+        - updated_at
+        - files: []
+        - project_id
+        - parent_todo_id
+        - subtasks: []
+
+## UI KOMPONENTER
+- Todo-lista med filter och sortering
+- Formulär för att skapa/redigera todos
+- Filuppladdning kopplad till specifik todo
+- Status-uppdatering
+- Deadline-hantering
+
+## NÄSTA STEG
+1. Fixa filuppladdning
+   - Kontrollera filhantering i upload_todo_file
+   - Lägg till stöd för att ladda ner filer
+   - Visa filstorlek och typ
+
+2. Implementera projekt
+   - CRUD för projekt
+   - Färgkodning av projekt
+   - Filtrera todos per projekt
+
+3. Implementera subtasks
+   - Möjlighet att skapa subtasks
+   - Visa hierarki i UI
+   - Hantera status för parent när subtasks uppdateras
