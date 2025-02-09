@@ -11,54 +11,54 @@
             --todoist-red: #db4c3f;
             --todoist-gray: #808080;
         }
-        
+
         .navbar-brand {
             color: var(--todoist-red) !important;
             font-weight: bold;
         }
-        
+
         .navbar {
             background-color: white !important;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        
+
         .todo-list {
             max-width: 800px;
             margin: 0 auto;
         }
-        
+
         .todo-item {
             display: flex;
             align-items: center;
             padding: 8px 0;
             border-bottom: 1px solid #f0f0f0;
         }
-        
+
         .todo-checkbox {
             margin-right: 10px;
             width: 18px;
             height: 18px;
             cursor: pointer;
         }
-        
+
         .todo-content {
             flex-grow: 1;
         }
-        
+
         .todo-title {
             margin-bottom: 4px;
         }
-        
+
         .todo-meta {
             font-size: 12px;
             color: var(--todoist-gray);
         }
-        
+
         .priority-1 { border-left: 3px solid #ff0000; }
         .priority-2 { border-left: 3px solid #ff9900; }
         .priority-3 { border-left: 3px solid #0000ff; }
         .priority-4 { border-left: 3px solid transparent; }
-        
+
         .add-task-btn {
             background-color: var(--todoist-red);
             color: white;
@@ -66,35 +66,36 @@
             padding: 8px 16px;
             border-radius: 3px;
         }
-        
+
         .add-task-btn:hover {
             background-color: #c53727;
             color: white;
         }
-        
+
         .completed {
             text-decoration: line-through;
             color: var(--todoist-gray);
         }
-        
+
         .attached-files {
             font-size: 0.9em;
             color: #666;
         }
-        
+
         .file-item {
             margin: 5px 0;
             padding: 5px;
             background: #f8f9fa;
             border-radius: 4px;
         }
-        
+
         .file-item .btn-link {
             padding: 0;
             font-size: 0.9em;
             text-decoration: none;
         }
-        
+
+        /* Vänstermenyn */
         .project-list {
             width: 305px;
             background-color: #fafafa;
@@ -105,23 +106,23 @@
             top: 56px;
             border-right: 1px solid #f0f0f0;
         }
-        
+
         .projects-section {
             padding-top: 12px;
         }
-        
+
         .projects-section:not(:first-child) {
             border-top: 1px solid #f0f0f0;
             margin-top: 12px;
         }
-        
+
         .projects-header {
             padding: 0 24px 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        
+
         .projects-header h6 {
             color: #808080;
             font-size: 13px;
@@ -132,19 +133,20 @@
             align-items: center;
             gap: 8px;
         }
-        
+
         .projects-header h6 i {
             font-size: 14px;
         }
-        
+
         .projects-header .toggle-btn {
             background: none;
             border: none;
             color: #666;
             padding: 4px;
         }
-        
-        .project-item {
+
+        /* Begränsa active- och hover-stylingen till vänstermenyn */
+        .project-list .project-item {
             display: flex;
             align-items: center;
             padding: 8px 24px;
@@ -152,15 +154,15 @@
             margin: 1px 0;
             color: #202020;
         }
-        
-        .project-item:hover {
+
+        .project-list .project-item:hover {
             background-color: #eeeeee;
         }
-        
-        .project-item.active {
+
+        .project-list .project-item.active {
             background-color: #eeeeee;
         }
-        
+
         .project-color {
             width: 10px;
             height: 10px;
@@ -168,23 +170,23 @@
             margin-right: 12px;
             flex-shrink: 0;
         }
-        
+
         .project-name {
             flex-grow: 1;
             font-size: 14px;
         }
-        
+
         .project-count {
             color: #666;
             font-size: 12px;
             margin-left: 8px;
         }
-        
+
         .main-content {
             margin-left: 305px;
             padding: 24px;
         }
-        
+
         .add-project-btn {
             width: 100%;
             text-align: left;
@@ -197,12 +199,12 @@
             align-items: center;
             gap: 12px;
         }
-        
+
         .add-project-btn:hover {
             background-color: #eeeeee;
             color: #202020;
         }
-        
+
         .add-project-btn i {
             font-size: 16px;
             color: #808080;
@@ -226,9 +228,9 @@
     </nav>
 
     <div class="d-flex">
-        <!-- Projekt-sidopanel -->
+        <!-- Vänstermenyn -->
         <div class="project-list">
-            <!-- Lägg till Kommande-sektion -->
+            <!-- Kommande-sektion -->
             <div class="projects-section">
                 <div class="projects-header">
                     <h6>
@@ -242,7 +244,7 @@
                     <div class="project-count" id="allTasksCount">0</div>
                 </div>
             </div>
-            
+
             <!-- Projekt-sektion -->
             <div class="projects-section mt-4">
                 <div class="projects-header">
@@ -254,29 +256,26 @@
                         <i class="bi bi-chevron-down"></i>
                     </button>
                 </div>
-                
+
                 <div id="projectsList">
                     <!-- Projekt laddas dynamiskt här -->
                 </div>
-                
+
                 <button class="add-project-btn" data-bs-toggle="modal" data-bs-target="#addProjectModal">
                     <i class="bi bi-plus"></i>
                     Lägg till projekt
                 </button>
             </div>
         </div>
-        
+
         <!-- Huvudinnehåll -->
         <div class="main-content">
             <div class="container mt-4">
                 <div class="todo-list">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h4>Dagens uppgifter</h4>
-                        <button class="add-task-btn" data-bs-toggle="modal" data-bs-target="#addTaskModal">
-                            <i class="bi bi-plus-lg"></i> Lägg till uppgift
-                        </button>
                     </div>
-                    
+
                     {% for todo in todos %}
                     <div class="todo-item priority-{{ todo.priority|default(4) }} ps-2" data-project-id="{{ todo.project_id }}">
                         <form onsubmit="updateTodoStatus(event, '{{ todo.id }}', this)">
@@ -286,7 +285,7 @@
                                    {{ 'checked' if todo.status == 'completed' }}
                                    onchange="this.form.requestSubmit()">
                         </form>
-                        
+
                         <div class="todo-content ms-2" style="cursor: pointer;" onclick="showTodoDetails('{{ todo.id }}', '{{ todo.title }}', '{{ todo.description }}', '{{ todo.deadline }}', '{{ todo.priority|default(4) }}', '{{ todo.project_id }}')">
                             <div class="todo-title {{ 'completed' if todo.status == 'completed' }}">
                                 {{ todo.title }}
@@ -321,7 +320,7 @@
                             </div>
                             {% endif %}
                         </div>
-                        
+
                         <div class="todo-actions">
                             <button class="btn btn-sm btn-link" onclick="editTodo('{{ todo.id }}')">
                                 <i class="bi bi-pencil"></i>
@@ -332,6 +331,14 @@
                         </div>
                     </div>
                     {% endfor %}
+                    
+                    <!-- Lägg till uppgift som en del av listan -->
+                    <div class="todo-item ps-2">
+                        <button class="add-project-btn w-100 text-start" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                            <i class="bi bi-plus"></i>
+                            Lägg till uppgift
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -368,7 +375,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Bifoga fil (valfritt)</label>
-                            <input type="file" class="form-control" name="file" accept=".pdf,.csv">
+                            <input type="file" class="form-control" name="file" accept=".pdf;.csv">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Projekt</label>
@@ -429,7 +436,7 @@
                                 <!-- Filer laddas dynamiskt här -->
                             </div>
                             <div class="mt-2">
-                                <input type="file" class="form-control" name="file" accept=".pdf,.csv">
+                                <input type="file" class="form-control" name="file" accept=".pdf;.csv">
                             </div>
                         </div>
                     </div>
@@ -442,7 +449,7 @@
         </div>
     </div>
 
-    <!-- Lägg till modal för att skapa projekt -->
+    <!-- Modal för att skapa projekt -->
     <div class="modal fade" id="addProjectModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -470,6 +477,7 @@
         </div>
     </div>
 
+    <!-- Om du har andra projektobjekt i huvudinnehållet (ex. projekträknare) -->
     <div id="projectCounters">
         {% for project in projects %}
             <div class="project-item" data-id="{{ project.id }}">
@@ -493,34 +501,30 @@
 
         function showTodoDetails(todoId, title, description, deadline, priority, projectId) {
             currentTodoId = todoId;
-            
+
             // Uppdatera formuläret med todo-data
             document.getElementById('editTitle').value = title;
             document.getElementById('editDescription').value = description || '';
-            
+
             // Hantera deadline-datumet korrekt
             const deadlineInput = document.getElementById('editDeadline');
-            if (deadline && deadline !== 'undefined') {
-                deadlineInput.value = deadline;
-            } else {
-                deadlineInput.value = '';
-            }
-            
+            deadlineInput.value = (deadline && deadline !== 'undefined') ? deadline : '';
+
             document.getElementById('editPriority').value = priority;
-            
+
             // Sätt valt projekt
             const projectSelect = document.getElementById('editProject');
             if (projectSelect) {
                 projectSelect.value = projectId || '';
             }
-            
+
             // Hämta och visa filer
             fetch(`/get_todo_files/${todoId}`)
                 .then(response => response.json())
                 .then(files => {
                     const filesContainer = document.getElementById('attachedFiles');
                     filesContainer.innerHTML = '';
-                    
+
                     files.forEach(file => {
                         const fileDiv = document.createElement('div');
                         fileDiv.className = 'd-flex justify-content-between align-items-center mb-2';
@@ -548,7 +552,7 @@
                         filesContainer.appendChild(fileDiv);
                     });
                 });
-            
+
             todoDetailsModal.show();
         }
 
@@ -557,7 +561,8 @@
                 fetch(`/delete_todo_file/${todoId}/${filename}`, {
                     method: 'POST'
                 }).then(() => {
-                    showTodoDetails(todoId, 
+                    showTodoDetails(
+                        todoId, 
                         document.getElementById('editTitle').value,
                         document.getElementById('editDescription').value,
                         document.getElementById('editDeadline').value,
@@ -568,12 +573,17 @@
             }
         }
 
+        // Ändrad deleteTodo – tar bort elementet från DOM:en och uppdaterar räknarna utan att ladda om sidan
         function deleteTodo(todoId) {
             if (confirm('Är du säker på att du vill ta bort denna uppgift?')) {
                 fetch(`/delete_todo/${todoId}`, {
                     method: 'POST',
                 }).then(() => {
-                    window.location.reload();
+                    const todoElement = document.querySelector(`.todo-item[data-id="${todoId}"]`);
+                    if (todoElement) {
+                        todoElement.remove();
+                    }
+                    updateProjectCounts();
                 });
             }
         }
@@ -587,12 +597,12 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        // Uppdatera todo status utan omladdning
+        // Uppdatera todo-status utan omladdning
         async function updateTodoStatus(event, todoId, form) {
             event.preventDefault();
             const checkbox = form.querySelector('input[type="checkbox"]');
             const newStatus = checkbox.checked ? 'completed' : 'not_started';
-            
+
             try {
                 const response = await fetch(`/update_todo_status/${todoId}`, {
                     method: 'POST',
@@ -601,11 +611,11 @@
                     },
                     body: JSON.stringify({ status: newStatus })
                 });
-                
+
                 if (response.ok) {
                     const todoElement = form.closest('.todo-item');
                     const titleElement = todoElement.querySelector('.todo-title');
-                    
+
                     if (newStatus === 'completed') {
                         titleElement.classList.add('completed');
                     } else {
@@ -614,25 +624,26 @@
                 }
             } catch (error) {
                 console.error('Error:', error);
-                checkbox.checked = !checkbox.checked; // Återställ checkbox om det blev fel
+                checkbox.checked = !checkbox.checked;
             }
         }
 
-        // Lägg till ny todo utan omladdning
+        // Ändrad addTodo – efter att ha lagt till todo uppdateras räknarna
         async function addTodo(event) {
             event.preventDefault();
             const form = event.target;
             const formData = new FormData(form);
-            
+
             try {
                 const response = await fetch('/add_todo', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 if (response.ok) {
                     const newTodo = await response.json();
                     addTodoToList(newTodo);
+                    updateProjectCounts();
                     const modal = bootstrap.Modal.getInstance(document.getElementById('addTaskModal'));
                     modal.hide();
                     form.reset();
@@ -651,19 +662,17 @@
             event.preventDefault();
             const form = event.target;
             const formData = new FormData(form);
-            
+
             try {
                 const response = await fetch(`/edit_todo/${currentTodoId}`, {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 if (response.ok) {
                     const updatedTodo = await response.json();
                     updateTodoInList(updatedTodo);
                     todoDetailsModal.hide();
-                    
-                    // Uppdatera projekt-räknare efter uppdatering
                     updateProjectCounts();
                 } else {
                     const error = await response.text();
@@ -675,14 +684,14 @@
             }
         }
 
-        // Hjälpfunktion för att lägga till todo i listan
+        // Lägg till todo i listan
         function addTodoToList(todo) {
             const todoList = document.querySelector('.todo-list');
             const todoElement = createTodoElement(todo);
             todoList.appendChild(todoElement);
         }
 
-        // Hjälpfunktion för att uppdatera todo i listan
+        // Uppdatera todo i listan
         function updateTodoInList(todo) {
             const todoElement = document.querySelector(`.todo-item[data-id="${todo.id}"]`);
             if (todoElement) {
@@ -691,30 +700,22 @@
             }
         }
 
-        // Uppdatera createTodoElement funktionen för att formatera datumet korrekt
+        // Skapa todo-element med korrekt datumformat
         function createTodoElement(todo) {
             const div = document.createElement('div');
             div.className = `todo-item priority-${todo.priority || 4} ps-2`;
             div.dataset.id = todo.id;
             div.dataset.projectId = todo.project_id || '';
-            
-            // Escapea eventuella citattecken i värdena
+
             const safeTitle = todo.title.replace(/'/g, "\\'");
             const safeDescription = (todo.description || '').replace(/'/g, "\\'");
-            
-            // Formatera datumet
+
             let formattedDate = '';
             if (todo.deadline) {
                 const date = new Date(todo.deadline);
-                if (!isNaN(date.getTime())) {
-                    // Formatera till YYYY-MM-DD
-                    formattedDate = date.toISOString().split('T')[0];
-                } else {
-                    // Om datumet redan är i YYYY-MM-DD format
-                    formattedDate = todo.deadline;
-                }
+                formattedDate = !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : todo.deadline;
             }
-            
+
             div.innerHTML = `
                 <form onsubmit="updateTodoStatus(event, '${todo.id}', this)">
                     <input type="hidden" name="todo_id" value="${todo.id}">
@@ -723,7 +724,7 @@
                            ${todo.status === 'completed' ? 'checked' : ''}
                            onchange="this.form.requestSubmit()">
                 </form>
-                
+
                 <div class="todo-content ms-2" style="cursor: pointer;" 
                      onclick="showTodoDetails('${todo.id}', '${safeTitle}', '${safeDescription}', '${formattedDate}', '${todo.priority || 4}', '${todo.project_id || ''}')">
                     <div class="todo-title ${todo.status === 'completed' ? 'completed' : ''}">
@@ -731,13 +732,11 @@
                     </div>
                     <div class="todo-meta">
                         ${todo.description ? `<span class="me-2">${todo.description}</span>` : ''}
-                        ${formattedDate ? `<span class="me-2">
-                            <i class="bi bi-calendar"></i> ${formattedDate}</span>` : ''}
+                        ${formattedDate ? `<span class="me-2"><i class="bi bi-calendar"></i> ${formattedDate}</span>` : ''}
                     </div>
                 </div>
             `;
-            
-            // Lägg till filvisning
+
             if (todo.files && todo.files.length > 0) {
                 let filesHtml = '<div class="attached-files mt-2">';
                 todo.files.forEach(file => {
@@ -754,14 +753,13 @@
                     `;
                 });
                 filesHtml += '</div>';
-                // Lägg till filesHtml i todo-elementet
                 div.innerHTML += filesHtml;
             }
-            
+
             return div;
         }
 
-        // Funktion för att ladda projekt
+        // Ladda projekt
         async function loadProjects() {
             try {
                 const response = await fetch('/projects');
@@ -773,21 +771,18 @@
                 console.error('Error loading projects:', error);
             }
         }
-        
-        // Funktion för att visa projekt i sidopanelen
+
+        // Visa projekt i vänstermenyn
         function displayProjects(projects) {
             const projectsList = document.getElementById('projectsList');
             projectsList.innerHTML = '';
-            
-            // Uppdatera projektväljare i formulären
+
             updateProjectSelects(projects);
-            
-            // Visa projekt i sidopanelen
+
             projects.forEach(project => {
-                // Räkna antal todos för detta projekt
                 const todoCount = Array.from(document.querySelectorAll('.todo-item'))
                     .filter(item => item.dataset.projectId === project.id).length;
-                
+
                 const div = document.createElement('div');
                 div.className = `project-item ${currentProject === project.id ? 'active' : ''}`;
                 div.dataset.id = project.id;
@@ -796,24 +791,24 @@
                     <div class="project-name">${project.name}</div>
                     <div class="project-count">${todoCount}</div>
                 `;
-                
+
                 div.onclick = () => selectProject(project.id, project.name);
                 projectsList.appendChild(div);
             });
         }
-        
-        // Funktion för att lägga till nytt projekt
+
+        // Lägg till nytt projekt
         async function addProject(event) {
             event.preventDefault();
             const form = event.target;
             const formData = new FormData(form);
-            
+
             try {
                 const response = await fetch('/add_project', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 if (response.ok) {
                     const newProject = await response.json();
                     const modal = bootstrap.Modal.getInstance(document.getElementById('addProjectModal'));
@@ -825,24 +820,21 @@
                 console.error('Error adding project:', error);
             }
         }
-        
-        // Funktion för att välja projekt
+
+        // Välj projekt – uppdatera endast vänstermenyn och filtrera todo-objekten
         function selectProject(projectId, projectName) {
             currentProject = projectId;
-            
-            // Uppdatera UI för valt projekt
-            document.querySelectorAll('.project-item').forEach(item => {
+
+            document.querySelectorAll('.project-list .project-item').forEach(item => {
                 item.classList.remove('active');
                 if ((projectId === null && !item.dataset.id) || item.dataset.id === projectId) {
                     item.classList.add('active');
                 }
             });
-            
-            // Uppdatera rubriken
+
             const heading = document.querySelector('.todo-list h4');
             heading.textContent = projectName || 'Alla uppgifter';
-            
-            // Visa alla uppgifter om projektId är null, annars filtrera
+
             document.querySelectorAll('.todo-item').forEach(item => {
                 if (!projectId) {
                     item.style.display = '';
@@ -852,32 +844,23 @@
                     item.style.display = 'none';
                 }
             });
-            
-            // Uppdatera räknare
+
             updateProjectCounts();
         }
-        
-        // Lägg till funktion för att uppdatera projekt-räknare
+
+        // Uppdatera projekt-räknare (begränsat till vänstermenyn)
         function updateProjectCounts() {
-            // Räkna alla synliga uppgifter
-            const allVisibleTasks = Array.from(document.querySelectorAll('.todo-item'))
-                .filter(item => window.getComputedStyle(item).display !== 'none').length;
-            
-            // Uppdatera räknaren för "Alla uppgifter"
-            const allTasksCount = document.getElementById('allTasksCount');
-            if (allTasksCount) {
-                allTasksCount.textContent = allVisibleTasks;
+            const allTasksCount = document.querySelectorAll('.todo-item').length;
+            const allTasksElement = document.getElementById('allTasksCount');
+            if (allTasksElement) {
+                allTasksElement.textContent = allTasksCount;
             }
-            
-            // Uppdatera projekt-räknare
-            document.querySelectorAll('.project-item').forEach(projectItem => {
-                if (!projectItem.dataset.id) return; // Skippa "Alla uppgifter"
-                
+
+            document.querySelectorAll('.project-list .project-item').forEach(projectItem => {
+                if (!projectItem.dataset.id) return;
                 const projectId = projectItem.dataset.id;
                 const todoCount = Array.from(document.querySelectorAll('.todo-item'))
-                    .filter(item => item.dataset.projectId === projectId 
-                        && window.getComputedStyle(item).display !== 'none').length;
-                
+                    .filter(item => item.dataset.projectId === projectId).length;
                 const countElement = projectItem.querySelector('.project-count');
                 if (countElement) {
                     countElement.textContent = todoCount;
@@ -885,17 +868,17 @@
             });
         }
 
-        // Hjälpfunktion för att uppdatera projektväljare
+        // Uppdatera projektväljare i formulären
         function updateProjectSelects(projects) {
             const projectSelects = document.querySelectorAll('select[name="project_id"]');
             projectSelects.forEach(select => {
                 select.innerHTML = '';
-                
+
                 const defaultOption = document.createElement('option');
                 defaultOption.value = '';
                 defaultOption.textContent = 'Välj projekt';
                 select.appendChild(defaultOption);
-                
+
                 projects.forEach(project => {
                     const option = document.createElement('option');
                     option.value = project.id;
@@ -906,4 +889,4 @@
         }
     </script>
 </body>
-</html> 
+</html>

@@ -87,31 +87,3 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
-
-function updateProjectCounters() {
-    document.querySelectorAll('.project-item').forEach(projectItem => {
-        const projectId = projectItem.dataset.id;
-        const todoCount = Array.from(document.querySelectorAll('.todo-item'))
-            .filter(item => item.dataset.projectId === projectId 
-                && window.getComputedStyle(item).display !== 'none').length;
-        
-        const countElement = projectItem.querySelector('.project-count');
-        if (countElement) {
-            countElement.textContent = todoCount;
-        }
-    });
-}
-
-// Anropa updateProjectCounters när en uppgift läggs till eller tas bort
-document.getElementById('addTodoButton').addEventListener('click', () => {
-    // Logik för att lägga till en uppgift...
-    updateProjectCounters();
-});
-
-// Anropa updateProjectCounters när en uppgift tas bort
-document.querySelectorAll('.delete-todo-button').forEach(button => {
-    button.addEventListener('click', () => {
-        // Logik för att ta bort en uppgift...
-        updateProjectCounters();
-    });
-});
