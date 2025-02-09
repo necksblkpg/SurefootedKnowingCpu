@@ -121,8 +121,8 @@ def dashboard():
         else:
             file['last_edited'] = ''
 
-    # Hämta uppgifter för det aktuella projektet
-    todos = db.collection("users").document(safe_login_name).collection("todos").where("project_id", "==", currentProject).stream()
+    # Exempel: Hämta todos för aktuellt projekt (denna del kan anpassas)
+    todos = db.collection("users").document(safe_login_name).collection("todos").stream()
 
     return render_template("dashboard.html", user=session['user'], files=files, todos=todos)
 
@@ -136,13 +136,13 @@ def upload_route():
         file = request.files['file']
         if file.filename == '':
             return "Ingen fil vald", 400
-            
+
         # Kontrollera filtyp
         allowed_extensions = {'.csv', '.pdf'}
         file_ext = os.path.splitext(file.filename)[1].lower()
         if file_ext not in allowed_extensions:
             return "Ogiltigt filformat. Endast CSV och PDF är tillåtna.", 400
-            
+
         safe_login_name = get_safe_login_name()
         # Spara filen i mappen: uploads/<safe_login_name>/<filnamn>
         blob_path = f'uploads/{safe_login_name}/{file.filename}'
@@ -191,16 +191,16 @@ def rename_file():
         return "Filnamn saknas", 400
     if "/" in new_filename or "\\" in new_filename:
         return "Felaktigt filnamn - mappändring ej tillåten", 400
-        
+
     # Kontrollera filtyp
     allowed_extensions = {'.csv', '.pdf'}
     file_ext = os.path.splitext(new_filename)[1].lower()
     if file_ext not in allowed_extensions:
         return "Ogiltigt filformat. Endast CSV och PDF är tillåtna.", 400
-        
+
     old_blob_path = f"uploads/{safe_login_name}/{old_filename}"
     new_blob_path = f"uploads/{safe_login_name}/{new_filename}"
-    
+
     old_blob = bucket.blob(old_blob_path)
     bucket.copy_blob(old_blob, bucket, new_blob_path)
     old_blob.delete()
@@ -242,40 +242,40 @@ def logout():
 def get_projects():
     if 'user' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     safe_login_name = get_safe_login_name()
     projects_ref = db.collection("users").document(safe_login_name).collection("projects")
     projects = []
-    
+
     for doc in projects_ref.stream():
         project = doc.to_dict()
         project['id'] = doc.id
         projects.append(project)
-    
+
     return jsonify(projects)
 
 @app.route('/add_project', methods=['POST'])
 def add_project():
     if 'user' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     safe_login_name = get_safe_login_name()
     name = request.form.get('name')
     color = request.form.get('color', '#808080')  # Default grå färg
-    
+
     if not name:
         return jsonify({'error': 'Project name is required'}), 400
-    
+
     project_data = {
         'name': name,
         'color': color,
         'created_at': datetime.now(),
         'updated_at': datetime.now()
     }
-    
+
     project_ref = db.collection("users").document(safe_login_name).collection("projects").document()
     project_ref.set(project_data)
-    
+
     project_data['id'] = project_ref.id
     return jsonify(project_data)
 
@@ -283,9 +283,9 @@ def add_project():
 def todos():
     if 'user' not in session:
         return redirect(url_for('index'))
-    
+
     safe_login_name = get_safe_login_name()
-    
+
     # Hämta alla projekt först
     projects_ref = db.collection("users").document(safe_login_name).collection("projects")
     projects = []
@@ -293,7 +293,7 @@ def todos():
         project = doc.to_dict()
         project['id'] = doc.id
         projects.append(project)
-    
+
     # Om inga projekt finns, skapa ett standardprojekt "Inkorg"
     if not projects:
         inbox_project = {
@@ -306,14 +306,14 @@ def todos():
         inbox_ref.set(inbox_project)
         inbox_project['id'] = inbox_ref.id
         projects.append(inbox_project)
-    
-    # Hämta alla todos och gruppera dem efter projekt
-    todos_ref = db.collection("users").document(safe_login_name).collection("todos")
+
+    # Hämta endast todos med status "not_started" så att klara uppgifter inte visas
+    todos_ref = db.collection("users").document(safe_login_name).collection("todos").where("status", "==", "not_started")
     todos = []
     for doc in todos_ref.stream():
         todo = doc.to_dict()
         todo['id'] = doc.id
-        
+
         # Konvertera deadline till rätt format om den finns
         if todo.get('deadline'):
             if isinstance(todo['deadline'], datetime):
@@ -324,41 +324,64 @@ def todos():
                     todo['deadline'] = date.strftime('%Y-%m-%d')
                 except ValueError:
                     todo['deadline'] = None
-        
+
         todos.append(todo)
-    
+
     return render_template('todos.html', todos=todos, projects=projects)
+
+@app.route('/completed_todos')
+def completed_todos():
+    if 'user' not in session:
+        return redirect(url_for('index'))
+
+    safe_login_name = get_safe_login_name()
+    todos_ref = db.collection("users").document(safe_login_name).collection("todos").where("status", "==", "completed")
+    todos = []
+    for doc in todos_ref.stream():
+        todo = doc.to_dict()
+        todo['id'] = doc.id
+        if todo.get('deadline'):
+            if isinstance(todo['deadline'], datetime):
+                todo['deadline'] = todo['deadline'].strftime('%Y-%m-%d')
+            elif isinstance(todo['deadline'], str):
+                try:
+                    date = datetime.strptime(todo['deadline'], '%Y-%m-%d')
+                    todo['deadline'] = date.strftime('%Y-%m-%d')
+                except ValueError:
+                    todo['deadline'] = None
+        todos.append(todo)
+    return render_template('completed_todos.html', todos=todos)
 
 @app.route('/add_todo', methods=['GET', 'POST'])
 def add_todo():
     if 'user' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     safe_login_name = get_safe_login_name()
-    
+
     title = request.form.get('title')
     description = request.form.get('description', '')
     deadline = parse_date(request.form.get('deadline'))
     priority = int(request.form.get('priority', 4))
     project_id = request.form.get('project_id')  # Hämta projekt-ID
-    
+
     # Skapa todo-dokumentet
     todo_data = {
         'title': title,
         'description': description,
         'deadline': deadline,
         'priority': priority,
-        'project_id': project_id,  # Spara projekt-ID
+        'project_id': project_id,
         'status': 'not_started',
         'created_at': datetime.now(),
         'updated_at': datetime.now(),
         'files': []
     }
-    
+
     # Lägg till i Firestore
     todo_ref = db.collection("users").document(safe_login_name).collection("todos").document()
     todo_ref.set(todo_data)
-    
+
     # Hantera filuppladdning om en fil finns
     if 'file' in request.files:
         file = request.files['file']
@@ -367,7 +390,7 @@ def add_todo():
                 # Spara filen och uppdatera todo med filinformation
                 blob_path = f'todo_files/{safe_login_name}/{todo_ref.id}/{file.filename}'
                 blob = bucket.blob(blob_path)
-                
+
                 # Spara original filnamn och content type
                 content_type = file.content_type or 'application/octet-stream'
                 metadata = {
@@ -375,22 +398,22 @@ def add_todo():
                     'content_type': content_type
                 }
                 blob.metadata = metadata
-                
+
                 # Få filstorlek
                 file.seek(0, 2)  # Gå till slutet av filen
                 file_size = file.tell()  # Få position (storlek)
                 file.seek(0)  # Återgå till början
-                
+
                 # Ladda upp filen
                 blob.upload_from_file(file, content_type=content_type)
-                
+
                 # Skapa signerad URL för nedladdning
                 url = blob.generate_signed_url(
                     version="v4",
                     expiration=timedelta(minutes=15),
                     method="GET"
                 )
-                
+
                 # Uppdatera todo med filinformation
                 file_data = {
                     'filename': file.filename,
@@ -400,68 +423,68 @@ def add_todo():
                     'upload_time': datetime.now(),
                     'download_url': url
                 }
-                
+
                 todo_ref.update({
                     'files': firestore.ArrayUnion([file_data]),
                     'updated_at': datetime.now()
                 })
-                
+
             except Exception as e:
                 print(f"Fel vid filuppladdning: {e}")
                 # Fortsätt även om filuppladdningen misslyckas
-    
+
     # Hämta den skapade todo:n för att returnera
     todo = todo_ref.get().to_dict()
     todo['id'] = todo_ref.id
-    
+
     return jsonify(todo)
 
 @app.route('/update_todo_status/<todo_id>', methods=['POST'])
 def update_todo_status(todo_id):
     if 'user' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     data = request.get_json()
     new_status = data.get('status')
-    
+
     if not new_status:
         return jsonify({'error': 'Missing status'}), 400
-    
+
     safe_login_name = get_safe_login_name()
     todo_ref = db.collection("users").document(safe_login_name).collection("todos").document(todo_id)
-    
+
     todo_ref.update({
         'status': new_status,
         'updated_at': datetime.now()
     })
-    
+
     return jsonify({'success': True})
 
 @app.route('/upload_todo_file/<todo_id>', methods=['POST'])
 def upload_todo_file(todo_id):
     if 'user' not in session:
         return redirect(url_for('index'))
-    
+
     if 'file' not in request.files:
         return "Ingen fil skickades", 400
-    
+
     file = request.files['file']
     if file.filename == '':
         return "Ingen fil vald", 400
-        
+
     # Kontrollera filtyp
     allowed_extensions = {'.csv', '.pdf'}
     file_ext = os.path.splitext(file.filename)[1].lower()
     if file_ext not in allowed_extensions:
         return "Ogiltigt filformat. Endast CSV och PDF är tillåtna.", 400
-        
+
     safe_login_name = get_safe_login_name()
-    
+
     try:
         # Spara filen i en specifik mapp för todo-filer
         blob_path = f'todo_files/{safe_login_name}/{todo_id}/{file.filename}'
         blob = bucket.blob(blob_path)
-        
+
         # Spara original filnamn och content type
         content_type = 'application/pdf' if file_ext == '.pdf' else 'text/csv'
         metadata = {
@@ -469,14 +492,14 @@ def upload_todo_file(todo_id):
             'content_type': content_type
         }
         blob.metadata = metadata
-        
+
         # Ladda upp filen och få filstorlek
         file.seek(0, os.SEEK_END)
         file_size = file.tell()
         file.seek(0)
-        
+
         blob.upload_from_file(file, content_type=content_type)
-        
+
         # Skapa signerad URL för nedladdning
         url = blob.generate_signed_url(
             version="v4",
@@ -486,7 +509,7 @@ def upload_todo_file(todo_id):
 
         # Uppdatera todo-dokumentet med filinformation
         todo_ref = db.collection("users").document(safe_login_name).collection("todos").document(todo_id)
-        
+
         current_time = datetime.now()
         file_data = {
             'filename': file.filename,
@@ -496,15 +519,15 @@ def upload_todo_file(todo_id):
             'upload_time': current_time,
             'download_url': url
         }
-        
+
         # Uppdatera todo-dokumentet
         todo_ref.update({
             'files': firestore.ArrayUnion([file_data]),
             'updated_at': current_time
         })
-        
+
         return redirect(url_for('todos'))
-        
+
     except Exception as e:
         print(f"Fel vid filuppladdning: {e}")
         return "Ett fel uppstod vid filuppladdning", 500
@@ -513,10 +536,10 @@ def upload_todo_file(todo_id):
 def download_todo_file(todo_id, filename):
     if 'user' not in session:
         return redirect(url_for('index'))
-    
+
     safe_login_name = get_safe_login_name()
     blob_path = f'todo_files/{safe_login_name}/{todo_id}/{filename}'
-    
+
     try:
         blob = bucket.blob(blob_path)
         url = blob.generate_signed_url(
@@ -533,64 +556,64 @@ def download_todo_file(todo_id, filename):
 def delete_todo_file(todo_id, filename):
     if 'user' not in session:
         return redirect(url_for('index'))
-    
+
     safe_login_name = get_safe_login_name()
-    
+
     # Ta bort filen från Storage
     blob_path = f'todo_files/{safe_login_name}/{todo_id}/{filename}'
     blob = bucket.blob(blob_path)
     blob.delete()
-    
+
     # Uppdatera todo-dokumentet
     todo_ref = db.collection("users").document(safe_login_name).collection("todos").document(todo_id)
     todo_doc = todo_ref.get()
-    
+
     if todo_doc.exists:
         todo_data = todo_doc.to_dict()
         files = todo_data.get('files', [])
         # Ta bort filen från files-arrayen
         files = [f for f in files if f['filename'] != filename]
-        
+
         todo_ref.update({
             'files': files,
             'updated_at': firestore.SERVER_TIMESTAMP
         })
-    
+
     return redirect(url_for('todos'))
 
 @app.route('/delete_todo/<todo_id>', methods=['POST'])
 def delete_todo(todo_id):
     if 'user' not in session:
         return redirect(url_for('index'))
-    
+
     safe_login_name = get_safe_login_name()
-    
+
     # Ta först bort alla tillhörande filer
     todo_ref = db.collection("users").document(safe_login_name).collection("todos").document(todo_id)
     todo_doc = todo_ref.get()
-    
+
     if todo_doc.exists:
         todo_data = todo_doc.to_dict()
         files = todo_data.get('files', [])
-        
+
         # Ta bort filer från Storage
         for file in files:
             blob = bucket.blob(file['blob_path'])
             blob.delete()
-    
+
     # Ta bort todo-dokumentet
     todo_ref.delete()
-    
+
     return redirect(url_for('todos'))
 
 @app.route('/edit_todo/<todo_id>', methods=['POST'])
 def edit_todo(todo_id):
     if 'user' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     safe_login_name = get_safe_login_name()
     todo_ref = db.collection("users").document(safe_login_name).collection("todos").document(todo_id)
-    
+
     try:
         # Hämta formulärdata
         title = request.form.get('title')
@@ -598,7 +621,7 @@ def edit_todo(todo_id):
         deadline = request.form.get('deadline')
         priority = int(request.form.get('priority', 4))
         project_id = request.form.get('project_id')
-        
+
         # Skapa uppdateringsdata
         update_data = {
             'title': title,
@@ -607,13 +630,13 @@ def edit_todo(todo_id):
             'project_id': project_id,
             'updated_at': datetime.now()
         }
-        
+
         if deadline:
             update_data['deadline'] = parse_date(deadline)
-        
+
         # Uppdatera todo
         todo_ref.update(update_data)
-        
+
         # Hantera ny fil om en sådan laddades upp
         if 'file' in request.files:
             file = request.files['file']
@@ -622,26 +645,26 @@ def edit_todo(todo_id):
                     # Spara filen och uppdatera todo med filinformation
                     blob_path = f'todo_files/{safe_login_name}/{todo_id}/{file.filename}'
                     blob = bucket.blob(blob_path)
-                    
+
                     content_type = file.content_type or 'application/octet-stream'
                     metadata = {
                         'original_filename': file.filename,
                         'content_type': content_type
                     }
                     blob.metadata = metadata
-                    
+
                     file.seek(0, 2)
                     file_size = file.tell()
                     file.seek(0)
-                    
+
                     blob.upload_from_file(file, content_type=content_type)
-                    
+
                     url = blob.generate_signed_url(
                         version="v4",
                         expiration=timedelta(minutes=15),
                         method="GET"
                     )
-                    
+
                     file_data = {
                         'filename': file.filename,
                         'blob_path': blob_path,
@@ -650,24 +673,24 @@ def edit_todo(todo_id):
                         'upload_time': datetime.now(),
                         'download_url': url
                     }
-                    
+
                     todo_ref.update({
                         'files': firestore.ArrayUnion([file_data]),
                         'updated_at': datetime.now()
                     })
                 except Exception as e:
                     print(f"Fel vid filuppladdning: {e}")
-        
+
         # Hämta den uppdaterade todo:n för att returnera
         updated_todo = todo_ref.get().to_dict()
         updated_todo['id'] = todo_id
-        
+
         # Konvertera deadline till strängformat om det finns
         if updated_todo.get('deadline'):
             updated_todo['deadline'] = updated_todo['deadline'].strftime('%Y-%m-%d')
-        
+
         return jsonify(updated_todo)
-        
+
     except Exception as e:
         print(f"Fel vid uppdatering av todo: {e}")
         return jsonify({'error': str(e)}), 500
@@ -676,15 +699,15 @@ def edit_todo(todo_id):
 def get_todo_files(todo_id):
     if 'user' not in session:
         return redirect(url_for('index'))
-    
+
     safe_login_name = get_safe_login_name()
     todo_ref = db.collection("users").document(safe_login_name).collection("todos").document(todo_id)
     todo_doc = todo_ref.get()
-    
+
     if todo_doc.exists:
         todo_data = todo_doc.to_dict()
         return jsonify(todo_data.get('files', []))
-    
+
     return jsonify([])
 
 if __name__ == '__main__':

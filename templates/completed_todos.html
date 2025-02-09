@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mina Uppgifter</title>
+  <title>Färdiga Uppgifter</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
   <style>
@@ -19,7 +19,6 @@
       background-color: white !important;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-    /* Lista med todo-objekt */
     .todo-list {
       max-width: 800px;
       margin: 0 auto;
@@ -32,7 +31,6 @@
       cursor: pointer;
     }
     .todo-checkbox {
-      /* Anpassad checkbox-styling */
       width: 18px;
       height: 18px;
       cursor: pointer;
@@ -45,7 +43,6 @@
       margin-right: 10px;
       position: relative;
     }
-    /* Färger för checkbox beroende på prioritet */
     .todo-checkbox.priority-1 { border-color: #ff0000; }
     .todo-checkbox.priority-2 { border-color: #ff9900; }
     .todo-checkbox.priority-3 { border-color: #0000ff; }
@@ -70,7 +67,6 @@
       font-size: 0.9em;
       text-decoration: none;
     }
-    /* Vänstermenyn */
     .project-list {
       width: 305px;
       background-color: #fafafa;
@@ -109,7 +105,6 @@
       color: #666;
       padding: 4px;
     }
-    /* Active och hover-styling i vänstermenyn */
     .project-list .project-item {
       display: flex;
       align-items: center;
@@ -154,7 +149,7 @@
   </style>
 </head>
 <body>
-  <!-- Topmeny med symbol (nu med länk till startsidan) -->
+  <!-- Topmeny med länk till startsidan -->
   <nav class="navbar navbar-expand-lg navbar-light">
     <div class="container">
       <a class="navbar-brand" href="/"> 
@@ -163,7 +158,7 @@
       <div class="collapse navbar-collapse">
         <ul class="navbar-nav ms-auto">
           <li class="nav-item">
-            <a class="nav-link" href="/completed_todos">Färdiga uppgifter</a>
+            <a class="nav-link active" href="/completed_todos">Färdiga uppgifter</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="/logout">Logga ut</a>
@@ -174,7 +169,7 @@
   </nav>
 
   <div class="d-flex">
-    <!-- Vänstermenyn -->
+    <!-- Vänstermenyn (samma som i todos.html) -->
     <div class="project-list">
       <div class="projects-section">
         <div class="projects-header">
@@ -209,14 +204,14 @@
       </div>
     </div>
 
-    <!-- Huvudinnehåll -->
+    <!-- Huvudinnehåll för klara uppgifter -->
     <div class="main-content">
       <div class="container mt-4">
         <div class="todo-list">
           <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4>Dagens uppgifter</h4>
+            <h4>Färdiga uppgifter</h4>
           </div>
-          <!-- Lista med todo-objekt -->
+          <!-- Lista med klara uppgifter -->
           <div id="todoItems">
             {% for todo in todos %}
             <div class="todo-item ps-2" 
@@ -229,12 +224,10 @@
               <form onsubmit="updateTodoStatus(event, '{{ todo.id }}', this)" class="me-2">
                 <input type="hidden" name="todo_id" value="{{ todo.id }}">
                 <input type="hidden" name="status" value="{{ 'completed' if todo.status != 'completed' else 'not_started' }}">
-                <input type="checkbox" class="todo-checkbox priority-{{ todo.priority|default(4) }}" 
-                       {{ 'checked' if todo.status == 'completed' }} 
-                       onchange="this.form.requestSubmit()">
+                <input type="checkbox" class="todo-checkbox priority-{{ todo.priority|default(4) }}" checked onchange="this.form.requestSubmit()">
               </form>
               <div class="todo-content flex-grow-1">
-                <div class="todo-title {{ 'completed' if todo.status == 'completed' }}">
+                <div class="todo-title completed">
                   {{ todo.title }}
                 </div>
                 <div class="todo-meta">
@@ -268,7 +261,6 @@
                   {% endif %}
                 </div>
               </div>
-              <!-- Papperskorg-knapp (tar id från närmaste .todo-item) -->
               <div class="todo-actions ms-auto">
                 <button class="btn btn-sm btn-link text-danger" onclick="deleteTodo(this.closest('.todo-item').dataset.id)">
                   <i class="bi bi-trash"></i>
@@ -277,19 +269,12 @@
             </div>
             {% endfor %}
           </div>
-          <!-- Knapp för att lägga till ny uppgift -->
-          <div id="addTodoButtonContainer" class="ps-2 mt-3">
-            <button class="add-project-btn w-100 text-start" data-bs-toggle="modal" data-bs-target="#addTaskModal">
-              <i class="bi bi-plus"></i>
-              Lägg till uppgift
-            </button>
-          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal för att lägga till uppgift -->
+  <!-- Samma modaler som i todos.html -->
   <div class="modal fade" id="addTaskModal" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -338,7 +323,6 @@
     </div>
   </div>
 
-  <!-- Modal för att visa/redigera uppgift (behålls, men kan anpassas efter behov) -->
   <div class="modal fade" id="todoDetailsModal" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -394,7 +378,6 @@
     </div>
   </div>
 
-  <!-- Modal för att skapa projekt -->
   <div class="modal fade" id="addProjectModal" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -441,7 +424,6 @@
       loadProjects();
       updateProjectCounts();
 
-      // Delegat-lyssnare för att hantera klick på ett todo-element (utanför checkbox och actions)
       document.getElementById('todoItems').addEventListener('click', function(e) {
         if (e.target.closest('input[type="checkbox"]') || e.target.closest('.todo-actions')) return;
         const todoItem = e.target.closest('.todo-item');
@@ -455,7 +437,6 @@
         showTodoDetails(todoId, title, description, deadline, priority, projectId);
       });
 
-      // När modalen för att lägga till uppgift visas, förifyll projektfältet om currentProject är satt
       var addTaskModalEl = document.getElementById('addTaskModal');
       addTaskModalEl.addEventListener('show.bs.modal', function () {
         if (currentProject) {
@@ -571,7 +552,7 @@
             ${todo.description ? `<div>${todo.description}</div>` : ''}
             ${formattedDate ? `<div><i class="bi bi-calendar"></i> ${formattedDate}</div>` : ''}
             ${todo.project_id ? (function(){
-              const proj = (Array.from({length: projects.length}, (_, i) => projects[i]).filter(p => p.id === todo.project_id));
+              const proj = (Array.from(window.projects || []).filter(p => p.id === todo.project_id));
               return proj.length > 0 ? `<div><small class="text-muted">${proj[0].name}</small></div>` : '';
             })() : ''}
             ${todo.files ? `<div class="attached-files mt-2">
@@ -599,7 +580,7 @@
         const response = await fetch('/projects');
         if (response.ok) {
           const projectsData = await response.json();
-          window.projects = projectsData; // Spara globalt för att kunna använda vid skapande av todo-element
+          window.projects = projectsData;
           displayProjects(projectsData);
         }
       } catch (error) {
