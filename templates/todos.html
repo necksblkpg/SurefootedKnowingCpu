@@ -11,54 +11,45 @@
             --todoist-red: #db4c3f;
             --todoist-gray: #808080;
         }
-
         .navbar-brand {
             color: var(--todoist-red) !important;
             font-weight: bold;
         }
-
         .navbar {
             background-color: white !important;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-
+        /* Lista med todo-objekt */
         .todo-list {
             max-width: 800px;
             margin: 0 auto;
         }
-
         .todo-item {
             display: flex;
             align-items: center;
             padding: 8px 0;
             border-bottom: 1px solid #f0f0f0;
         }
-
         .todo-checkbox {
             margin-right: 10px;
             width: 18px;
             height: 18px;
             cursor: pointer;
         }
-
         .todo-content {
             flex-grow: 1;
         }
-
         .todo-title {
             margin-bottom: 4px;
         }
-
         .todo-meta {
             font-size: 12px;
             color: var(--todoist-gray);
         }
-
         .priority-1 { border-left: 3px solid #ff0000; }
         .priority-2 { border-left: 3px solid #ff9900; }
         .priority-3 { border-left: 3px solid #0000ff; }
         .priority-4 { border-left: 3px solid transparent; }
-
         .add-task-btn {
             background-color: var(--todoist-red);
             color: white;
@@ -66,35 +57,29 @@
             padding: 8px 16px;
             border-radius: 3px;
         }
-
         .add-task-btn:hover {
             background-color: #c53727;
             color: white;
         }
-
         .completed {
             text-decoration: line-through;
             color: var(--todoist-gray);
         }
-
         .attached-files {
             font-size: 0.9em;
             color: #666;
         }
-
         .file-item {
             margin: 5px 0;
             padding: 5px;
             background: #f8f9fa;
             border-radius: 4px;
         }
-
         .file-item .btn-link {
             padding: 0;
             font-size: 0.9em;
             text-decoration: none;
         }
-
         /* Vänstermenyn */
         .project-list {
             width: 305px;
@@ -106,23 +91,19 @@
             top: 56px;
             border-right: 1px solid #f0f0f0;
         }
-
         .projects-section {
             padding-top: 12px;
         }
-
         .projects-section:not(:first-child) {
             border-top: 1px solid #f0f0f0;
             margin-top: 12px;
         }
-
         .projects-header {
             padding: 0 24px 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-
         .projects-header h6 {
             color: #808080;
             font-size: 13px;
@@ -133,19 +114,16 @@
             align-items: center;
             gap: 8px;
         }
-
         .projects-header h6 i {
             font-size: 14px;
         }
-
         .projects-header .toggle-btn {
             background: none;
             border: none;
             color: #666;
             padding: 4px;
         }
-
-        /* Begränsa active- och hover-stylingen till vänstermenyn */
+        /* Active och hover-styling begränsas till vänstermenyn */
         .project-list .project-item {
             display: flex;
             align-items: center;
@@ -154,15 +132,12 @@
             margin: 1px 0;
             color: #202020;
         }
-
         .project-list .project-item:hover {
             background-color: #eeeeee;
         }
-
         .project-list .project-item.active {
             background-color: #eeeeee;
         }
-
         .project-color {
             width: 10px;
             height: 10px;
@@ -170,23 +145,19 @@
             margin-right: 12px;
             flex-shrink: 0;
         }
-
         .project-name {
             flex-grow: 1;
             font-size: 14px;
         }
-
         .project-count {
             color: #666;
             font-size: 12px;
             margin-left: 8px;
         }
-
         .main-content {
             margin-left: 305px;
             padding: 24px;
         }
-
         .add-project-btn {
             width: 100%;
             text-align: left;
@@ -199,12 +170,10 @@
             align-items: center;
             gap: 12px;
         }
-
         .add-project-btn:hover {
             background-color: #eeeeee;
             color: #202020;
         }
-
         .add-project-btn i {
             font-size: 16px;
             color: #808080;
@@ -244,7 +213,6 @@
                     <div class="project-count" id="allTasksCount">0</div>
                 </div>
             </div>
-
             <!-- Projekt-sektion -->
             <div class="projects-section mt-4">
                 <div class="projects-header">
@@ -256,11 +224,9 @@
                         <i class="bi bi-chevron-down"></i>
                     </button>
                 </div>
-
                 <div id="projectsList">
                     <!-- Projekt laddas dynamiskt här -->
                 </div>
-
                 <button class="add-project-btn" data-bs-toggle="modal" data-bs-target="#addProjectModal">
                     <i class="bi bi-plus"></i>
                     Lägg till projekt
@@ -275,65 +241,65 @@
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h4>Dagens uppgifter</h4>
                     </div>
+                    <!-- Container för todo-objekten -->
+                    <div id="todoItems">
+                        {% for todo in todos %}
+                        <div class="todo-item priority-{{ todo.priority|default(4) }} ps-2" data-project-id="{{ todo.project_id }}">
+                            <form onsubmit="updateTodoStatus(event, '{{ todo.id }}', this)">
+                                <input type="hidden" name="todo_id" value="{{ todo.id }}">
+                                <input type="hidden" name="status" value="{{ 'completed' if todo.status != 'completed' else 'not_started' }}">
+                                <input type="checkbox" class="todo-checkbox" 
+                                       {{ 'checked' if todo.status == 'completed' }}
+                                       onchange="this.form.requestSubmit()">
+                            </form>
 
-                    {% for todo in todos %}
-                    <div class="todo-item priority-{{ todo.priority|default(4) }} ps-2" data-project-id="{{ todo.project_id }}">
-                        <form onsubmit="updateTodoStatus(event, '{{ todo.id }}', this)">
-                            <input type="hidden" name="todo_id" value="{{ todo.id }}">
-                            <input type="hidden" name="status" value="{{ 'completed' if todo.status != 'completed' else 'not_started' }}">
-                            <input type="checkbox" class="todo-checkbox" 
-                                   {{ 'checked' if todo.status == 'completed' }}
-                                   onchange="this.form.requestSubmit()">
-                        </form>
-
-                        <div class="todo-content ms-2" style="cursor: pointer;" onclick="showTodoDetails('{{ todo.id }}', '{{ todo.title }}', '{{ todo.description }}', '{{ todo.deadline }}', '{{ todo.priority|default(4) }}', '{{ todo.project_id }}')">
-                            <div class="todo-title {{ 'completed' if todo.status == 'completed' }}">
-                                {{ todo.title }}
-                            </div>
-                            {% if todo.description or todo.deadline or todo.files %}
-                            <div class="todo-meta">
-                                {% if todo.description %}
-                                <span class="me-2">{{ todo.description }}</span>
-                                {% endif %}
-                                {% if todo.deadline %}
-                                <span class="me-2">
-                                    <i class="bi bi-calendar"></i> {{ todo.deadline }}
-                                </span>
-                                {% endif %}
-                                {% if todo.files %}
-                                <div class="attached-files mt-2">
-                                    {% for file in todo.files %}
-                                    <div class="file-item">
-                                        <i class="bi bi-paperclip"></i>
-                                        {{ file.filename }}
-                                        {% if file.size %}
-                                        <small>({{ (file.size / 1024)|round(1) }} KB)</small>
-                                        {% endif %}
-                                        <a href="/download_todo_file/{{ todo.id }}/{{ file.filename }}" 
-                                           class="btn btn-sm btn-link" target="_blank">
-                                            Ladda ner
-                                        </a>
+                            <div class="todo-content ms-2" style="cursor: pointer;" onclick="showTodoDetails('{{ todo.id }}', '{{ todo.title }}', '{{ todo.description }}', '{{ todo.deadline }}', '{{ todo.priority|default(4) }}', '{{ todo.project_id }}')">
+                                <div class="todo-title {{ 'completed' if todo.status == 'completed' }}">
+                                    {{ todo.title }}
+                                </div>
+                                {% if todo.description or todo.deadline or todo.files %}
+                                <div class="todo-meta">
+                                    {% if todo.description %}
+                                    <span class="me-2">{{ todo.description }}</span>
+                                    {% endif %}
+                                    {% if todo.deadline %}
+                                    <span class="me-2">
+                                        <i class="bi bi-calendar"></i> {{ todo.deadline }}
+                                    </span>
+                                    {% endif %}
+                                    {% if todo.files %}
+                                    <div class="attached-files mt-2">
+                                        {% for file in todo.files %}
+                                        <div class="file-item">
+                                            <i class="bi bi-paperclip"></i>
+                                            {{ file.filename }}
+                                            {% if file.size %}
+                                            <small>({{ (file.size / 1024)|round(1) }} KB)</small>
+                                            {% endif %}
+                                            <a href="/download_todo_file/{{ todo.id }}/{{ file.filename }}" class="btn btn-sm btn-link" target="_blank">
+                                                Ladda ner
+                                            </a>
+                                        </div>
+                                        {% endfor %}
                                     </div>
-                                    {% endfor %}
+                                    {% endif %}
                                 </div>
                                 {% endif %}
                             </div>
-                            {% endif %}
-                        </div>
 
-                        <div class="todo-actions">
-                            <button class="btn btn-sm btn-link" onclick="editTodo('{{ todo.id }}')">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="btn btn-sm btn-link text-danger" onclick="deleteTodo('{{ todo.id }}')">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            <div class="todo-actions">
+                                <button class="btn btn-sm btn-link" onclick="editTodo('{{ todo.id }}')">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-link text-danger" onclick="deleteTodo('{{ todo.id }}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
-                    
-                    <!-- Lägg till uppgift som en del av listan -->
-                    <div class="todo-item ps-2">
+                    <!-- Knappen Lägg till uppgift, alltid längst ned -->
+                    <div id="addTodoButtonContainer" class="ps-2 mt-3">
                         <button class="add-project-btn w-100 text-start" data-bs-toggle="modal" data-bs-target="#addTaskModal">
                             <i class="bi bi-plus"></i>
                             Lägg till uppgift
@@ -477,12 +443,11 @@
         </div>
     </div>
 
-    <!-- Om du har andra projektobjekt i huvudinnehållet (ex. projekträknare) -->
+    <!-- Eventuellt extra element för projekt (om så önskas) -->
     <div id="projectCounters">
         {% for project in projects %}
             <div class="project-item" data-id="{{ project.id }}">
                 <h3>{{ project.name }} <span class="project-count">0</span></h3>
-                <!-- Här kan du lägga till uppgifter relaterade till projektet -->
             </div>
         {% endfor %}
     </div>
@@ -501,30 +466,20 @@
 
         function showTodoDetails(todoId, title, description, deadline, priority, projectId) {
             currentTodoId = todoId;
-
-            // Uppdatera formuläret med todo-data
             document.getElementById('editTitle').value = title;
             document.getElementById('editDescription').value = description || '';
-
-            // Hantera deadline-datumet korrekt
             const deadlineInput = document.getElementById('editDeadline');
             deadlineInput.value = (deadline && deadline !== 'undefined') ? deadline : '';
-
             document.getElementById('editPriority').value = priority;
-
-            // Sätt valt projekt
             const projectSelect = document.getElementById('editProject');
             if (projectSelect) {
                 projectSelect.value = projectId || '';
             }
-
-            // Hämta och visa filer
             fetch(`/get_todo_files/${todoId}`)
                 .then(response => response.json())
                 .then(files => {
                     const filesContainer = document.getElementById('attachedFiles');
                     filesContainer.innerHTML = '';
-
                     files.forEach(file => {
                         const fileDiv = document.createElement('div');
                         fileDiv.className = 'd-flex justify-content-between align-items-center mb-2';
@@ -534,17 +489,14 @@
                                 <span>${file.filename} ${fileSize}</span>
                                 <br>
                                 <small class="text-muted">
-                                    ${file.content_type || 'Okänd filtyp'} - 
-                                    Uppladdad: ${new Date(file.upload_time).toLocaleString()}
+                                    ${file.content_type || 'Okänd filtyp'} - Uppladdad: ${new Date(file.upload_time).toLocaleString()}
                                 </small>
                             </div>
                             <div>
-                                <a href="/download_todo_file/${todoId}/${file.filename}" 
-                                   class="btn btn-sm btn-primary me-2" target="_blank">
+                                <a href="/download_todo_file/${todoId}/${file.filename}" class="btn btn-sm btn-primary me-2" target="_blank">
                                     Ladda ner
                                 </a>
-                                <button type="button" class="btn btn-sm btn-danger" 
-                                        onclick="deleteTodoFile('${todoId}', '${file.filename}')">
+                                <button type="button" class="btn btn-sm btn-danger" onclick="deleteTodoFile('${todoId}', '${file.filename}')">
                                     Ta bort
                                 </button>
                             </div>
@@ -552,43 +504,37 @@
                         filesContainer.appendChild(fileDiv);
                     });
                 });
-
             todoDetailsModal.show();
         }
 
         function deleteTodoFile(todoId, filename) {
             if (confirm('Är du säker på att du vill ta bort denna fil?')) {
-                fetch(`/delete_todo_file/${todoId}/${filename}`, {
-                    method: 'POST'
-                }).then(() => {
-                    showTodoDetails(
-                        todoId, 
-                        document.getElementById('editTitle').value,
-                        document.getElementById('editDescription').value,
-                        document.getElementById('editDeadline').value,
-                        document.getElementById('editPriority').value,
-                        document.querySelector('#todoDetailsModal select[name="project_id"]').value
-                    );
-                });
+                fetch(`/delete_todo_file/${todoId}/${filename}`, { method: 'POST' })
+                    .then(() => {
+                        showTodoDetails(
+                            todoId, 
+                            document.getElementById('editTitle').value,
+                            document.getElementById('editDescription').value,
+                            document.getElementById('editDeadline').value,
+                            document.getElementById('editPriority').value,
+                            document.querySelector('#todoDetailsModal select[name="project_id"]').value
+                        );
+                    });
             }
         }
 
-        // Ändrad deleteTodo – tar bort elementet från DOM:en och uppdaterar räknarna utan att ladda om sidan
+        // Tar bort todo-elementet från DOM och uppdaterar räknarna utan att ladda om sidan
         function deleteTodo(todoId) {
             if (confirm('Är du säker på att du vill ta bort denna uppgift?')) {
-                fetch(`/delete_todo/${todoId}`, {
-                    method: 'POST',
-                }).then(() => {
-                    const todoElement = document.querySelector(`.todo-item[data-id="${todoId}"]`);
-                    if (todoElement) {
-                        todoElement.remove();
-                    }
-                    updateProjectCounts();
-                });
+                fetch(`/delete_todo/${todoId}`, { method: 'POST' })
+                    .then(() => {
+                        const todoElement = document.querySelector(`.todo-item[data-id="${todoId}"]`);
+                        if (todoElement) { todoElement.remove(); }
+                        updateProjectCounts();
+                    });
             }
         }
 
-        // Hjälpfunktion för att formatera filstorlek
         function formatFileSize(bytes) {
             if (bytes === 0) return '0 Bytes';
             const k = 1024;
@@ -597,25 +543,19 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        // Uppdatera todo-status utan omladdning
         async function updateTodoStatus(event, todoId, form) {
             event.preventDefault();
             const checkbox = form.querySelector('input[type="checkbox"]');
             const newStatus = checkbox.checked ? 'completed' : 'not_started';
-
             try {
                 const response = await fetch(`/update_todo_status/${todoId}`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: newStatus })
                 });
-
                 if (response.ok) {
                     const todoElement = form.closest('.todo-item');
                     const titleElement = todoElement.querySelector('.todo-title');
-
                     if (newStatus === 'completed') {
                         titleElement.classList.add('completed');
                     } else {
@@ -628,18 +568,12 @@
             }
         }
 
-        // Ändrad addTodo – efter att ha lagt till todo uppdateras räknarna
         async function addTodo(event) {
             event.preventDefault();
             const form = event.target;
             const formData = new FormData(form);
-
             try {
-                const response = await fetch('/add_todo', {
-                    method: 'POST',
-                    body: formData
-                });
-
+                const response = await fetch('/add_todo', { method: 'POST', body: formData });
                 if (response.ok) {
                     const newTodo = await response.json();
                     addTodoToList(newTodo);
@@ -657,18 +591,12 @@
             }
         }
 
-        // Uppdatera todo utan omladdning
         async function updateTodo(event) {
             event.preventDefault();
             const form = event.target;
             const formData = new FormData(form);
-
             try {
-                const response = await fetch(`/edit_todo/${currentTodoId}`, {
-                    method: 'POST',
-                    body: formData
-                });
-
+                const response = await fetch(`/edit_todo/${currentTodoId}`, { method: 'POST', body: formData });
                 if (response.ok) {
                     const updatedTodo = await response.json();
                     updateTodoInList(updatedTodo);
@@ -684,14 +612,13 @@
             }
         }
 
-        // Lägg till todo i listan
+        // Lägger till en ny todo i listan (i container #todoItems)
         function addTodoToList(todo) {
-            const todoList = document.querySelector('.todo-list');
+            const todoList = document.getElementById('todoItems');
             const todoElement = createTodoElement(todo);
             todoList.appendChild(todoElement);
         }
 
-        // Uppdatera todo i listan
         function updateTodoInList(todo) {
             const todoElement = document.querySelector(`.todo-item[data-id="${todo.id}"]`);
             if (todoElement) {
@@ -700,43 +627,32 @@
             }
         }
 
-        // Skapa todo-element med korrekt datumformat
         function createTodoElement(todo) {
             const div = document.createElement('div');
             div.className = `todo-item priority-${todo.priority || 4} ps-2`;
             div.dataset.id = todo.id;
             div.dataset.projectId = todo.project_id || '';
-
             const safeTitle = todo.title.replace(/'/g, "\\'");
             const safeDescription = (todo.description || '').replace(/'/g, "\\'");
-
             let formattedDate = '';
             if (todo.deadline) {
                 const date = new Date(todo.deadline);
                 formattedDate = !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : todo.deadline;
             }
-
             div.innerHTML = `
                 <form onsubmit="updateTodoStatus(event, '${todo.id}', this)">
                     <input type="hidden" name="todo_id" value="${todo.id}">
                     <input type="hidden" name="status" value="${todo.status === 'completed' ? 'not_started' : 'completed'}">
-                    <input type="checkbox" class="todo-checkbox" 
-                           ${todo.status === 'completed' ? 'checked' : ''}
-                           onchange="this.form.requestSubmit()">
+                    <input type="checkbox" class="todo-checkbox" ${todo.status === 'completed' ? 'checked' : ''} onchange="this.form.requestSubmit()">
                 </form>
-
-                <div class="todo-content ms-2" style="cursor: pointer;" 
-                     onclick="showTodoDetails('${todo.id}', '${safeTitle}', '${safeDescription}', '${formattedDate}', '${todo.priority || 4}', '${todo.project_id || ''}')">
-                    <div class="todo-title ${todo.status === 'completed' ? 'completed' : ''}">
-                        ${todo.title}
-                    </div>
+                <div class="todo-content ms-2" style="cursor: pointer;" onclick="showTodoDetails('${todo.id}', '${safeTitle}', '${safeDescription}', '${formattedDate}', '${todo.priority || 4}', '${todo.project_id || ''}')">
+                    <div class="todo-title ${todo.status === 'completed' ? 'completed' : ''}">${todo.title}</div>
                     <div class="todo-meta">
                         ${todo.description ? `<span class="me-2">${todo.description}</span>` : ''}
                         ${formattedDate ? `<span class="me-2"><i class="bi bi-calendar"></i> ${formattedDate}</span>` : ''}
                     </div>
                 </div>
             `;
-
             if (todo.files && todo.files.length > 0) {
                 let filesHtml = '<div class="attached-files mt-2">';
                 todo.files.forEach(file => {
@@ -745,8 +661,7 @@
                             <i class="bi bi-paperclip"></i>
                             ${file.filename}
                             ${file.size ? `<small>(${formatFileSize(file.size)})</small>` : ''}
-                            <a href="/download_todo_file/${todo.id}/${file.filename}" 
-                               class="btn btn-sm btn-link" target="_blank">
+                            <a href="/download_todo_file/${todo.id}/${file.filename}" class="btn btn-sm btn-link" target="_blank">
                                 Ladda ner
                             </a>
                         </div>
@@ -755,11 +670,9 @@
                 filesHtml += '</div>';
                 div.innerHTML += filesHtml;
             }
-
             return div;
         }
 
-        // Ladda projekt
         async function loadProjects() {
             try {
                 const response = await fetch('/projects');
@@ -772,17 +685,13 @@
             }
         }
 
-        // Visa projekt i vänstermenyn
         function displayProjects(projects) {
             const projectsList = document.getElementById('projectsList');
             projectsList.innerHTML = '';
-
             updateProjectSelects(projects);
-
             projects.forEach(project => {
-                const todoCount = Array.from(document.querySelectorAll('.todo-item'))
+                const todoCount = Array.from(document.querySelectorAll('#todoItems .todo-item'))
                     .filter(item => item.dataset.projectId === project.id).length;
-
                 const div = document.createElement('div');
                 div.className = `project-item ${currentProject === project.id ? 'active' : ''}`;
                 div.dataset.id = project.id;
@@ -791,24 +700,17 @@
                     <div class="project-name">${project.name}</div>
                     <div class="project-count">${todoCount}</div>
                 `;
-
                 div.onclick = () => selectProject(project.id, project.name);
                 projectsList.appendChild(div);
             });
         }
 
-        // Lägg till nytt projekt
         async function addProject(event) {
             event.preventDefault();
             const form = event.target;
             const formData = new FormData(form);
-
             try {
-                const response = await fetch('/add_project', {
-                    method: 'POST',
-                    body: formData
-                });
-
+                const response = await fetch('/add_project', { method: 'POST', body: formData });
                 if (response.ok) {
                     const newProject = await response.json();
                     const modal = bootstrap.Modal.getInstance(document.getElementById('addProjectModal'));
@@ -821,21 +723,18 @@
             }
         }
 
-        // Välj projekt – uppdatera endast vänstermenyn och filtrera todo-objekten
         function selectProject(projectId, projectName) {
             currentProject = projectId;
-
             document.querySelectorAll('.project-list .project-item').forEach(item => {
                 item.classList.remove('active');
                 if ((projectId === null && !item.dataset.id) || item.dataset.id === projectId) {
                     item.classList.add('active');
                 }
             });
-
             const heading = document.querySelector('.todo-list h4');
             heading.textContent = projectName || 'Alla uppgifter';
-
-            document.querySelectorAll('.todo-item').forEach(item => {
+            // Filtrera bara todo-objekten i #todoItems
+            document.querySelectorAll('#todoItems .todo-item').forEach(item => {
                 if (!projectId) {
                     item.style.display = '';
                 } else if (item.dataset.projectId === projectId) {
@@ -844,22 +743,20 @@
                     item.style.display = 'none';
                 }
             });
-
             updateProjectCounts();
         }
 
-        // Uppdatera projekt-räknare (begränsat till vänstermenyn)
+        // Uppdatera räknare, exkludera knappen genom att räkna endast inom #todoItems
         function updateProjectCounts() {
-            const allTasksCount = document.querySelectorAll('.todo-item').length;
+            const allTasksCount = document.querySelectorAll('#todoItems .todo-item').length;
             const allTasksElement = document.getElementById('allTasksCount');
             if (allTasksElement) {
                 allTasksElement.textContent = allTasksCount;
             }
-
             document.querySelectorAll('.project-list .project-item').forEach(projectItem => {
                 if (!projectItem.dataset.id) return;
                 const projectId = projectItem.dataset.id;
-                const todoCount = Array.from(document.querySelectorAll('.todo-item'))
+                const todoCount = Array.from(document.querySelectorAll('#todoItems .todo-item'))
                     .filter(item => item.dataset.projectId === projectId).length;
                 const countElement = projectItem.querySelector('.project-count');
                 if (countElement) {
@@ -868,17 +765,14 @@
             });
         }
 
-        // Uppdatera projektväljare i formulären
         function updateProjectSelects(projects) {
             const projectSelects = document.querySelectorAll('select[name="project_id"]');
             projectSelects.forEach(select => {
                 select.innerHTML = '';
-
                 const defaultOption = document.createElement('option');
                 defaultOption.value = '';
                 defaultOption.textContent = 'Välj projekt';
                 select.appendChild(defaultOption);
-
                 projects.forEach(project => {
                     const option = document.createElement('option');
                     option.value = project.id;
