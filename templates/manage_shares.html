@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hantera delningar</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+  <style>
+    .navbar-brand {
+      color: #db4c3f !important;
+      font-weight: bold;
+    }
+    .navbar {
+      background-color: white !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .share-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .share-status {
+      font-size: 0.9em;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .status-pending { background-color: #fff3cd; }
+    .status-accepted { background-color: #d4edda; }
+    .status-rejected { background-color: #f8d7da; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container">
+      <a class="navbar-brand" href="/todos">
+        <i class="bi bi-check2-square"></i>
+      </a>
+      <div class="collapse navbar-collapse">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/completed_todos">Färdiga uppgifter</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="/manage_shares">Hantera delningar</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/logout">Logga ut</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <h2 class="mb-4">Inkommande delningar</h2>
+    {% if incoming_shares %}
+      {% for share in incoming_shares %}
+        <div class="share-card">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h5 class="mb-1">{{ share.project_name }}</h5>
+              <p class="mb-1">Delad av: {{ share.owner_email }}</p>
+              <small class="text-muted">Delad: {{ share.share_time.strftime('%Y-%m-%d %H:%M') if share.share_time else 'Okänt datum' }}</small>
+            </div>
+            <div>
+              {% if share.status == 'pending' %}
+                <button class="btn btn-success btn-sm me-2" onclick="respondToShare('{{ share.id }}', 'accept')">
+                  Acceptera
+                </button>
+                <button class="btn btn-danger btn-sm" onclick="respondToShare('{{ share.id }}', 'reject')">
+                  Neka
+                </button>
+              {% else %}
+                <span class="share-status status-{{ share.status }}">
+                  {{ 'Accepterad' if share.status == 'accepted' else 'Nekad' }}
+                </span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p>Inga inkommande delningar</p>
+    {% endif %}
+
+    <h2 class="mb-4 mt-5">Utgående delningar</h2>
+    {% if outgoing_shares %}
+      {% for share in outgoing_shares %}
+        <div class="share-card">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h5 class="mb-1">{{ share.project_name }}</h5>
+              <p class="mb-1">Delad med: {{ share.shared_with_email }}</p>
+              <small class="text-muted">Delad: {{ share.share_time.strftime('%Y-%m-%d %H:%M') if share.share_time else 'Okänt datum' }}</small>
+            </div>
+            <div>
+              <span class="share-status status-{{ share.status }}">
+                {{ 'Väntar' if share.status == 'pending' else ('Accepterad' if share.status == 'accepted' else 'Nekad') }}
+              </span>
+              <button class="btn btn-outline-danger btn-sm ms-2" onclick="deleteShare('{{ share.id }}')">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p>Inga utgående delningar</p>
+    {% endif %}
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    async function respondToShare(shareId, response) {
+      try {
+        const res = await fetch('/respond_to_share', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ share_id: shareId, response: response })
+        });
+        
+        if (res.ok) {
+          location.reload();
+        } else {
+          const error = await res.text();
+          alert('Fel vid svar på delning: ' + error);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Ett fel uppstod');
+      }
+    }
+
+    async function deleteShare(shareId) {
+      if (!confirm('Är du säker på att du vill ta bort denna delning?')) return;
+      
+      try {
+        const res = await fetch(`/delete_share/${shareId}`, {
+          method: 'POST'
+        });
+        
+        if (res.ok) {
+          location.reload();
+        } else {
+          const error = await res.text();
+          alert('Fel vid borttagning av delning: ' + error);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Ett fel uppstod');
+      }
+    }
+  </script>
+</body>
+</html> 

@@ -151,6 +151,10 @@
     }
     .add-project-btn:hover { background-color: #eeeeee; color: #202020; }
     .add-project-btn i { font-size: 16px; color: #808080; }
+    .bi-people-fill {
+      font-size: 14px;
+      opacity: 0.7;
+    }
   </style>
 </head>
 <body>
@@ -164,6 +168,9 @@
         <ul class="navbar-nav ms-auto">
           <li class="nav-item">
             <a class="nav-link" href="/completed_todos">Färdiga uppgifter</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/manage_shares">Hantera delningar</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="/logout">Logga ut</a>
@@ -215,11 +222,14 @@
         <div class="todo-list">
           <div class="d-flex justify-content-between align-items-center mb-4">
             <h4>Kommande</h4>
-            <div class="d-flex align-items-center">
+            <div class="d-flex align-items-center gap-3">
               <select class="form-select form-select-sm" style="width: auto;" onchange="sortTodos(this.value)">
                 <option value="date">Datum</option>
                 <option value="priority">Prioritet</option>
               </select>
+              <button class="btn btn-sm btn-outline-primary" onclick="shareProject()">
+                <i class="bi bi-share"></i> Dela
+              </button>
             </div>
           </div>
           <!-- Lista med todo-objekt -->
@@ -228,6 +238,10 @@
             <div class="todo-item ps-2" 
                  data-id="{{ todo.id }}" 
                  data-project-id="{{ todo.project_id }}"
+                 {% if todo.is_shared %}
+                 data-shared-project-id="{{ todo.shared_project_id }}"
+                 data-owner-email="{{ todo.owner_email }}"
+                 {% endif %}
                  data-title="{{ todo.title }}"
                  data-description="{{ todo.description }}"
                  data-deadline="{{ todo.deadline }}"
@@ -255,6 +269,8 @@
                     {% if proj|length > 0 %}
                       <div><small class="text-muted">{{ proj[0].name }}</small></div>
                     {% endif %}
+                  {% elif todo.is_shared %}
+                    <div><small class="text-muted">{{ todo.project_name }}</small></div>
                   {% endif %}
                   {% if todo.files %}
                     <div class="attached-files mt-2">
@@ -424,6 +440,29 @@
             <button type="submit" class="btn btn-primary">Skapa projekt</button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lägg till modal för delning efter övriga modaler -->
+  <div class="modal fade" id="shareProjectModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Dela projekt</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="shareEmail" class="form-label">Email-adress</label>
+            <input type="email" class="form-control" id="shareEmail" required>
+            <div class="invalid-feedback">Ange en giltig email-adress</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+          <button type="button" class="btn btn-primary" onclick="submitShare()">Dela</button>
+        </div>
       </div>
     </div>
   </div>
@@ -624,9 +663,14 @@
         const div = document.createElement('div');
         div.className = `project-item ${currentProject === project.id ? 'active' : ''}`;
         div.dataset.id = project.id;
+        
+        // Lägg till delningsindikator om projektet är delat
+        const sharedIcon = project.is_shared ? 
+          `<i class="bi bi-people-fill text-muted ms-2" title="Delat av ${project.owner_email}"></i>` : '';
+        
         div.innerHTML = `
           <div class="project-color" style="background-color: ${project.color}"></div>
-          <div class="project-name">${project.name}</div>
+          <div class="project-name">${project.name}${sharedIcon}</div>
           <div class="project-count">${todoCount}</div>
         `;
         div.onclick = () => selectProject(project.id, project.name);
@@ -660,17 +704,21 @@
           item.classList.add('active');
         }
       });
+      
       const heading = document.querySelector('.todo-list h4');
       heading.textContent = projectName || 'Alla uppgifter';
+      
       document.querySelectorAll('#todoItems .todo-item').forEach(item => {
+        const itemProjectId = item.dataset.projectId;
         if (!projectId) {
           item.style.display = '';
-        } else if (item.dataset.projectId === projectId) {
+        } else if (itemProjectId === projectId || item.dataset.sharedProjectId === projectId) {
           item.style.display = '';
         } else {
           item.style.display = 'none';
         }
       });
+      
       updateProjectCounts();
     }
 
@@ -802,6 +850,52 @@
       // Töm och återskapa listan i ny ordning
       todoList.innerHTML = '';
       todos.forEach(todo => todoList.appendChild(todo));
+    }
+
+    function shareProject() {
+      // Kontrollera att ett projekt är valt
+      if (!currentProject) {
+        alert('Välj ett projekt att dela först');
+        return;
+      }
+      const shareModal = new bootstrap.Modal(document.getElementById('shareProjectModal'));
+      shareModal.show();
+    }
+
+    async function submitShare() {
+      const emailInput = document.getElementById('shareEmail');
+      const email = emailInput.value.trim();
+      
+      if (!email || !email.includes('@')) {
+        emailInput.classList.add('is-invalid');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/share_project', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project_id: currentProject,
+            email: email
+          })
+        });
+        
+        if (response.ok) {
+          const modal = bootstrap.Modal.getInstance(document.getElementById('shareProjectModal'));
+          modal.hide();
+          alert('Projekt delat!');
+          emailInput.value = '';
+        } else {
+          const error = await response.text();
+          alert('Fel vid delning: ' + error);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Ett fel uppstod vid delning av projektet');
+      }
+      
+      emailInput.classList.remove('is-invalid');
     }
   </script>
 </body>

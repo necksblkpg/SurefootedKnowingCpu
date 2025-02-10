@@ -1,74 +1,194 @@
-# TODO APP MED FILHANTERING - PROJEKTPLAN
+DELNING AV PROJEKT - IMPLEMENTATION PLAN
 
-[X] Initial planering
-[X] Datamodell för todos
-[X] Uppdatera databas-struktur
-[X] Implementera grundläggande CRUD-operationer för todos
-[X] Implementera filuppladdning för todos
-[X] Fixa bug med filuppladdning
-    [X] Kontrollera filhantering i upload_todo_file
-    [X] Lägg till stöd för att ladda ner filer
-    [X] Visa filstorlek och typ
-[ ] Implementera projekt/kategorier
-[ ] Implementera subtasks
-[ ] Testa och felsöka
-[ ] Deployment på Replit
+[X] UI-ändringar
+  [X] Lägg till "Dela"-knapp i projektvyn
+  [X] Lägg till "Hantera delningar" i huvudmenyn
 
-## DATAMODELL
-Todo-item ska innehålla:
-- id (auto-genererat)
-- titel
-- beskrivning
-- status (ej påbörjad/pågående/klar)
-- deadline (datum)
-- skapad datum
-- senast ändrad datum
-- tillhörande filer (optional)
-- projekt_id (koppling till projekt)
-- parent_todo_id (för subtasks, optional)
-- subtasks (array med todo-ids)
-- användar-id (koppling till användare)
+[X] Databas (Firestore)
+  [X] Skapa collections:
+    - share_id (auto)
+    - project_id
+    - owner_email
+    - shared_with_email
+    - status (pending/accepted/rejected)
+    - share_time
+    - response_time (när delningen accepteras/nekas)
 
-## DATABAS-STRUKTUR (Firestore)
-users/
-  {user_id}/
-    projects/
-      {project_id}/
-        - name
-        - color
-        - created_at
-    todos/
-      {todo_id}/
-        - title
-        - description
-        - status
-        - deadline
-        - created_at
-        - updated_at
-        - files: []
-        - project_id
-        - parent_todo_id
-        - subtasks: []
+[X] Backend (Flask)
+  [X] Nya routes:
+    [X] POST /share_project
+      - Ta emot project_id och email
+      - Validera att användaren äger projektet
+      - Skapa share i databasen
+    [X] GET /manage_shares
+      - Hämta alla inkommande och utgående delningar
+    [X] POST /respond_to_share
+      - Acceptera/neka delning
+    [X] GET /shared_projects
+      - Hämta alla projekt som delats med användaren
 
-## UI KOMPONENTER
-- Todo-lista med filter och sortering
-- Formulär för att skapa/redigera todos
-- Filuppladdning kopplad till specifik todo
-- Status-uppdatering
-- Deadline-hantering
+[X] Frontend
+  [X] Dela projekt
+    [X] Modal för att ange email när man klickar på dela
+    [X] Validering av email
+    [X] Feedback till användaren
+  
+  [X] Hantera delningar vy
+    [X] Lista inkommande delningar
+      [X] Acceptera/neka knappar
+    [X] Lista utgående delningar
+      [X] Status på delningar
+      [X] Möjlighet att ta bort delning
+  
+  [X] Projektvy
+    [X] Visa delningsstatus i projektlistan
+    [X] Uppdatera projektvy för delade projekt
+    [X] Visa vem projektet är delat med
 
-## NÄSTA STEG
-1. Fixa filuppladdning
-   - Kontrollera filhantering i upload_todo_file
-   - Lägg till stöd för att ladda ner filer
-   - Visa filstorlek och typ
+[X] Säkerhet
+  [X] Validera ägarskap vid delning
+  [X] Kontrollera behörighet vid åtkomst
+  [X] Hantera borttagna användare
+  [X] Begränsa antal delningar per projekt
 
-2. Implementera projekt
-   - CRUD för projekt
-   - Färgkodning av projekt
-   - Filtrera todos per projekt
+NÄSTA STEG:
+1. Skapa databas-struktur och collections
+2. Implementera backend-routes
+3. Bygga frontend för delning
+4. Implementera hantera delningar-vyn
 
-3. Implementera subtasks
-   - Möjlighet att skapa subtasks
-   - Visa hierarki i UI
-   - Hantera status för parent när subtasks uppdateras
+IMPLEMENTATION DETALJER:
+1. Databas
+  - Skapad collection: project_shares
+  - Indexering på: owner_email, shared_with_email, status
+  - Automatisk timestamp för share_time
+  - Compound index för snabb sökning på (shared_with_email, status)
+
+2. Backend Routes
+  a) POST /share_project
+    - Request: { project_id: string, email: string }
+    - Validering:
+      * Kontrollera att project_id finns
+      * Verifiera att användaren äger projektet
+      * Validera email-format
+    - Response:
+      * 200: { share_id: string }
+      * 400: Invalid request
+      * 403: Not project owner
+      * 404: Project not found
+
+  b) GET /manage_shares
+    - Response: {
+        incoming: [
+          {
+            share_id: string,
+            project_id: string,
+            project_name: string,
+            owner_email: string,
+            status: string,
+            share_time: timestamp
+          }
+        ],
+        outgoing: [
+          {
+            share_id: string,
+            project_id: string,
+            project_name: string,
+            shared_with_email: string,
+            status: string,
+            share_time: timestamp
+          }
+        ]
+      }
+    - Felhantering:
+      * 401: Unauthorized
+
+  c) POST /respond_to_share
+    - Request: { 
+        share_id: string,
+        response: "accept" | "reject" 
+      }
+    - Validering:
+      * Kontrollera att share_id finns
+      * Verifiera att användaren är mottagaren
+      * Validera att delningen är pending
+    - Response:
+      * 200: { status: "accepted" | "rejected" }
+      * 400: Invalid request
+      * 403: Not share recipient
+      * 404: Share not found
+      * 409: Already responded
+
+  d) GET /shared_projects
+    - Response: [
+        {
+          project_id: string,
+          project_name: string,
+          owner_email: string,
+          share_time: timestamp,
+          todos: [
+            {
+              id: string,
+              title: string,
+              description: string,
+              deadline: string,
+              status: string,
+              priority: number
+            }
+          ]
+        }
+      ]
+    - Felhantering:
+      * 401: Unauthorized
+      * 404: Project not found
+
+3. Frontend Implementation
+  a) Share Modal
+    - Email input med validering
+    - Felmeddelanden för:
+      * Ogiltig email
+      * Användare finns ej
+      * Redan delat projekt
+    - Success feedback
+    - Loading state under delning
+
+  b) Hantera delningar vy (manage_shares.html)
+    - Två sektioner:
+      * Inkommande delningar
+        - Visa projektnamn, ägare, delningsdatum
+        - Knappar för accept/reject
+        - Status-indikator
+      * Utgående delningar
+        - Visa projektnamn, delad med, delningsdatum
+        - Visa delningsstatus
+        - Ta bort delning-knapp
+    - Automatisk uppdatering vid statusändring
+    - Felhantering med användarvänliga meddelanden
+    - Bekräftelsedialog vid borttagning
+
+  c) Projektvy
+    - Visa delningsstatus:
+      * Ikon för delade projekt i projektlistan
+      * Tooltip med delningsinformation
+    - Delade projekt:
+      * Visa ägarens namn
+      * Read-only för delade projekt
+      * Uppdatera realtid vid ändringar
+    - Delningsindikatorer:
+      * Lista över användare projektet är delat med
+      * Status för varje delning
+      * Möjlighet att ta bort delningar
+
+4. Säkerhetsimplementation
+  - Ägarskapsvalidering:
+    * Kontrollera user_id mot project.owner_id
+    * Verifiera email-domän
+  - Behörighetskontroll:
+    * Implementera ACL (Access Control List)
+    * Kontrollera delningsstatus vid varje request
+  - Borttagna användare:
+    * Automatisk cleanup av delningar
+    * Notifiera kvarvarande användare
+  - Delningsbegränsningar:
+    * Max 5 delningar per projekt
+    * Cooldown period mellan delningar

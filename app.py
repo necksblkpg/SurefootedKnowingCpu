@@ -243,14 +243,39 @@ def get_projects():
     if 'user' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
 
+    user_email = session['user']['email']
     safe_login_name = get_safe_login_name()
-    projects_ref = db.collection("users").document(safe_login_name).collection("projects")
+    db = firestore.client()
     projects = []
 
+    # Hämta användarens egna projekt
+    projects_ref = db.collection("users").document(safe_login_name).collection("projects")
     for doc in projects_ref.stream():
         project = doc.to_dict()
         project['id'] = doc.id
+        project['is_shared'] = False
+        project['owner_email'] = user_email
         projects.append(project)
+
+    # Hämta projekt som delats med användaren och accepterats
+    shared_projects = db.collection('project_shares').where(
+        'shared_with_email', '==', user_email
+    ).where(
+        'status', '==', 'accepted'
+    ).stream()
+
+    for share in shared_projects:
+        share_data = share.to_dict()
+        owner_safe_name = share_data['owner_email'].replace('@', '_').replace('.', '_')
+        project_ref = db.collection("users").document(owner_safe_name).collection("projects").document(share_data['project_id'])
+        project = project_ref.get()
+        
+        if project.exists:
+            project_data = project.to_dict()
+            project_data['id'] = project.id
+            project_data['is_shared'] = True
+            project_data['owner_email'] = share_data['owner_email']
+            projects.append(project_data)
 
     return jsonify(projects)
 
@@ -284,37 +309,35 @@ def todos():
     if 'user' not in session:
         return redirect(url_for('index'))
 
+    user_email = session['user']['email']
     safe_login_name = get_safe_login_name()
+    db = firestore.client()
 
-    # Hämta alla projekt först
+    # Hämta alla projekt först (både egna och delade)
     projects_ref = db.collection("users").document(safe_login_name).collection("projects")
     projects = []
     for doc in projects_ref.stream():
         project = doc.to_dict()
         project['id'] = doc.id
+        project['is_shared'] = False
+        project['owner_email'] = user_email
         projects.append(project)
 
-    # Om inga projekt finns, skapa ett standardprojekt "Inkorg"
-    if not projects:
-        inbox_project = {
-            'name': 'Inkorg',
-            'color': '#808080',
-            'created_at': datetime.now(),
-            'updated_at': datetime.now()
-        }
-        inbox_ref = projects_ref.document()
-        inbox_ref.set(inbox_project)
-        inbox_project['id'] = inbox_ref.id
-        projects.append(inbox_project)
+    # Hämta delade projekt
+    shared_projects = db.collection('project_shares').where(
+        'shared_with_email', '==', user_email
+    ).where(
+        'status', '==', 'accepted'
+    ).stream()
 
-    # Hämta endast todos med status "not_started" så att klara uppgifter inte visas
+    # Initiera todo_list för alla todos
+    todo_list = []
+
+    # Hämta egna todos först
     todos_ref = db.collection("users").document(safe_login_name).collection("todos").where("status", "==", "not_started")
-    todos = []
     for doc in todos_ref.stream():
         todo = doc.to_dict()
         todo['id'] = doc.id
-
-        # Konvertera deadline till rätt format om den finns
         if todo.get('deadline'):
             if isinstance(todo['deadline'], datetime):
                 todo['deadline'] = todo['deadline'].strftime('%Y-%m-%d')
@@ -324,10 +347,45 @@ def todos():
                     todo['deadline'] = date.strftime('%Y-%m-%d')
                 except ValueError:
                     todo['deadline'] = None
+        todo_list.append(todo)
 
-        todos.append(todo)
+    # Hämta todos från delade projekt
+    for share in shared_projects:
+        share_data = share.to_dict()
+        owner_safe_name = share_data['owner_email'].replace('@', '_').replace('.', '_')
+        
+        # Hämta projektet först för att få projektnamnet
+        project_ref = db.collection("users").document(owner_safe_name).collection("projects").document(share_data['project_id'])
+        project = project_ref.get()
+        project_data = project.to_dict() if project.exists else {}
+        
+        shared_todos_ref = db.collection("users").document(owner_safe_name).collection("todos")
+        shared_todos = shared_todos_ref.where(
+            "project_id", "==", share_data['project_id']
+        ).where(
+            "status", "==", "not_started"
+        ).stream()
+        
+        for doc in shared_todos:
+            todo = doc.to_dict()
+            todo['id'] = doc.id
+            todo['is_shared'] = True
+            todo['owner_email'] = share_data['owner_email']
+            todo['shared_project_id'] = share_data['project_id']
+            todo['project_name'] = project_data.get('name', 'Okänt projekt')  # Lägg till projektnamnet
+            
+            if todo.get('deadline'):
+                if isinstance(todo['deadline'], datetime):
+                    todo['deadline'] = todo['deadline'].strftime('%Y-%m-%d')
+                elif isinstance(todo['deadline'], str):
+                    try:
+                        date = datetime.strptime(todo['deadline'], '%Y-%m-%d')
+                        todo['deadline'] = date.strftime('%Y-%m-%d')
+                    except ValueError:
+                        todo['deadline'] = None
+            todo_list.append(todo)
 
-    return render_template('todos.html', todos=todos, projects=projects)
+    return render_template('todos.html', todos=todo_list, projects=projects)
 
 @app.route('/completed_todos')
 def completed_todos():
@@ -709,6 +767,153 @@ def get_todo_files(todo_id):
         return jsonify(todo_data.get('files', []))
 
     return jsonify([])
+
+@app.route('/share_project', methods=['POST'])
+def share_project():
+    if 'user' not in session:
+        return 'Unauthorized', 401
+        
+    data = request.get_json()
+    if not data or 'project_id' not in data or 'email' not in data:
+        return 'Invalid request data', 400
+
+    project_id = data['project_id']
+    shared_with_email = data['email']
+    owner_email = session['user']['email']
+    safe_login_name = get_safe_login_name()
+
+    # Kontrollera att projektet existerar och att användaren äger det
+    db = firestore.client()
+    project_ref = db.collection('users').document(safe_login_name).collection('projects').document(project_id)
+    project = project_ref.get()
+    
+    if not project.exists:
+        return 'Project not found', 404
+
+    # Kontrollera om delningen redan finns
+    existing_share = db.collection('project_shares').where(
+        'project_id', '==', project_id
+    ).where(
+        'shared_with_email', '==', shared_with_email
+    ).limit(1).get()
+
+    if len(list(existing_share)) > 0:
+        return 'Project already shared with this user', 409
+
+    # Skapa ny delning
+    share_data = {
+        'project_id': project_id,
+        'owner_email': owner_email,
+        'shared_with_email': shared_with_email,
+        'status': 'pending',
+        'share_time': firestore.SERVER_TIMESTAMP,
+        'project_name': project.to_dict().get('name', '')
+    }
+    
+    share_ref = db.collection('project_shares').add(share_data)
+    
+    return jsonify({'share_id': share_ref[1].id})
+
+@app.route('/manage_shares')
+def manage_shares():
+    if 'user' not in session:
+        return redirect(url_for('index'))
+        
+    user_email = session['user']['email']
+    db = firestore.client()
+    
+    # Hämta inkommande delningar
+    incoming_shares = db.collection('project_shares').where(
+        'shared_with_email', '==', user_email
+    ).stream()
+    
+    # Hämta utgående delningar
+    outgoing_shares = db.collection('project_shares').where(
+        'owner_email', '==', user_email
+    ).stream()
+    
+    incoming = []
+    outgoing = []
+    
+    for share in incoming_shares:
+        share_data = share.to_dict()
+        share_data['id'] = share.id
+        incoming.append(share_data)
+        
+    for share in outgoing_shares:
+        share_data = share.to_dict()
+        share_data['id'] = share.id
+        outgoing.append(share_data)
+    
+    return render_template('manage_shares.html', 
+                         incoming_shares=incoming, 
+                         outgoing_shares=outgoing)
+
+@app.route('/respond_to_share', methods=['POST'])
+def respond_to_share():
+    if 'user' not in session:
+        return 'Unauthorized', 401
+        
+    data = request.get_json()
+    if not data or 'share_id' not in data or 'response' not in data:
+        return 'Invalid request data', 400
+        
+    share_id = data['share_id']
+    response = data['response']
+    user_email = session['user']['email']
+    
+    if response not in ['accept', 'reject']:
+        return 'Invalid response type', 400
+        
+    db = firestore.client()
+    share_ref = db.collection('project_shares').document(share_id)
+    share = share_ref.get()
+    
+    if not share.exists:
+        return 'Share not found', 404
+        
+    share_data = share.to_dict()
+    if share_data['shared_with_email'] != user_email:
+        return 'Not authorized to respond to this share', 403
+        
+    if share_data['status'] != 'pending':
+        return 'Share already responded to', 409
+        
+    # Uppdatera delningens status
+    share_ref.update({
+        'status': 'accepted' if response == 'accept' else 'rejected',
+        'response_time': firestore.SERVER_TIMESTAMP
+    })
+    
+    # Om accepterad, ge användaren tillgång till projektet
+    if response == 'accept':
+        # Här kan vi lägga till logik för att ge användaren tillgång till projektet
+        pass
+        
+    return jsonify({'status': 'success'})
+
+@app.route('/delete_share/<share_id>', methods=['POST'])
+def delete_share(share_id):
+    if 'user' not in session:
+        return 'Unauthorized', 401
+        
+    user_email = session['user']['email']
+    db = firestore.client()
+    
+    share_ref = db.collection('project_shares').document(share_id)
+    share = share_ref.get()
+    
+    if not share.exists:
+        return 'Share not found', 404
+        
+    share_data = share.to_dict()
+    if share_data['owner_email'] != user_email:
+        return 'Not authorized to delete this share', 403
+        
+    # Ta bort delningen
+    share_ref.delete()
+    
+    return jsonify({'status': 'success'})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000, debug=True)
