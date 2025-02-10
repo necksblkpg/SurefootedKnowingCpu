@@ -152,7 +152,7 @@
   <!-- Topmeny med länk till startsidan -->
   <nav class="navbar navbar-expand-lg navbar-light">
     <div class="container">
-      <a class="navbar-brand" href="/"> 
+      <a class="navbar-brand" href="/todos"> 
         <i class="bi bi-check2-square"></i>
       </a>
       <div class="collapse navbar-collapse">
@@ -457,7 +457,7 @@
         });
         if (response.ok) {
           const todoElement = form.closest('.todo-item');
-          if (newStatus === 'completed') {
+          if (newStatus === 'completed' || newStatus === 'not_started') {
             todoElement.remove();
             updateProjectCounts();
           }
